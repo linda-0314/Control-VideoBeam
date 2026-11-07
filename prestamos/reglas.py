@@ -10,4 +10,8 @@ class VideobeamNoExiste(Exception):
 
 
 def prestar_videobeam(codigo: str, prestados: frozenset[str]) -> frozenset[str]:
-    raise NotImplementedError("Falta implementar prestar_videobeam")
+    if codigo not in ["VB-01", "VB-02", "VB-03", "VB-04", "VB-05"]:
+        raise VideobeamNoExiste("El " + codigo + " no existe")
+    if codigo in prestados:
+        raise VideobeamYaPrestado("El " + codigo + " ya está prestado")
+    return prestados | {codigo}
