@@ -1,0 +1,17 @@
+# Variables de entorno y claves: nunca se suben
+.env
+.env.*
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# Base de datos local de Django (ADR-001): se copia aparte, no va al repositorio
+db.sqlite3
+
+# Editores
+.vscode/
+.idea/
