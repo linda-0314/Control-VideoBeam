@@ -1,30 +1,69 @@
 """Reglas del préstamo de videobeams.
 
 Python puro, sin Django: la vista de POST /prestamos llama estas funciones
-antes de guardar y convierte VideobeamNoExiste en 404 y VideobeamYaPrestado
-en 409 (documento de diseño, sección 6).
+antes de guardar y responde con el `estado_http` del error que se lance
+(documento de diseño, sección 6).
 """
+
+from collections.abc import Set
 
 # Los 5 videobeams de la biblioteca de la FET (requisitos de la semana 3).
 VIDEOBEAMS_DE_LA_BIBLIOTECA = frozenset({"VB-01", "VB-02", "VB-03", "VB-04", "VB-05"})
 
 
-class VideobeamYaPrestado(Exception):
-    """El videobeam tiene un préstamo sin devolución (HU-08, escenario 2)."""
+class ErrorDePrestamo(Exception):
+    """Error de una regla del préstamo, con el código del videobeam afectado.
+
+    Cada subclase define `plantilla` (el mensaje que ve el bibliotecario) y
+    `estado_http` (la respuesta de la API), para que la vista de Django
+    atrape un solo tipo de error.
+
+    Attributes:
+        codigo: Código del videobeam que causó el error, por ejemplo "VB-01".
+    """
+
+    plantilla = "Error con el {codigo}"
+    estado_http = 400
+
+    def __init__(self, codigo: object) -> None:
+        self.codigo = codigo
+        super().__init__(self.plantilla.format(codigo=codigo))
 
 
-class VideobeamNoExiste(Exception):
-    """El código no es uno de los videobeams de la biblioteca."""
+class VideobeamNoExiste(ErrorDePrestamo):
+    """El código no es uno de los videobeams de la biblioteca (API: 404)."""
+
+    plantilla = "El {codigo} no existe"
+    estado_http = 404
 
 
-def prestar_videobeam(codigo: str, prestados: frozenset[str]) -> frozenset[str]:
-    """Devuelve los prestados más `codigo`, sin modificar `prestados`.
+class VideobeamYaPrestado(ErrorDePrestamo):
+    """El videobeam tiene un préstamo sin devolución (HU-08, escenario 2; API: 409)."""
 
-    Lanza VideobeamNoExiste si el código no es de la biblioteca y
-    VideobeamYaPrestado si ya está prestado.
+    plantilla = "El {codigo} ya está prestado"
+    estado_http = 409
+
+
+def prestar_videobeam(codigo: str, prestados: Set[str]) -> frozenset[str]:
+    """Marca un videobeam como prestado si existe y está libre (HU-08).
+
+    Args:
+        codigo: Código del videobeam que se quiere prestar, exacto como lo
+            envía la lista del formulario, por ejemplo "VB-04".
+        prestados: Códigos de los videobeams que tienen un préstamo sin
+            devolución. Puede ser un set o un frozenset; no se modifica.
+
+    Returns:
+        frozenset[str]: Un conjunto nuevo con los prestados más `codigo`.
+
+    Raises:
+        VideobeamNoExiste: Si `codigo` no es uno de los 5 videobeams de la
+            biblioteca, por ejemplo "VB-09", "vb-02" o None.
+        VideobeamYaPrestado: Si `codigo` ya está en `prestados`. El mensaje
+            es "El VB-01 ya está prestado".
     """
     if codigo not in VIDEOBEAMS_DE_LA_BIBLIOTECA:
-        raise VideobeamNoExiste(f"El {codigo} no existe")
+        raise VideobeamNoExiste(codigo)
     if codigo in prestados:
-        raise VideobeamYaPrestado(f"El {codigo} ya está prestado")
+        raise VideobeamYaPrestado(codigo)
     return frozenset(prestados) | {codigo}
