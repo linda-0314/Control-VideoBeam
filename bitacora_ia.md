@@ -1,4 +1,4 @@
-# Bitácora de uso de IA – Semana 5
+# Bitácora de uso de IA – Semanas 5 y 6
 
 Proyecto: Control VideoBeam FET · Funcionalidad: HU-08, no prestar un videobeam ya prestado
 Estudiante: Linda Paola Carreño Meneses
@@ -54,6 +54,44 @@ Asistente: Claude (claude.ai), con acceso a un entorno para crear archivos, ejec
 - **Razón:** La lista era un valor mágico. Con la constante se entiende qué es y hay un solo lugar donde cambiarla si la biblioteca compra otro videobeam. El comportamiento no cambia.
 - **Cómo la verifiqué:** Ejecuté `pytest` después del refactor: «11 passed». Con `git diff` comprobé que la carpeta `tests/` no cambió.
 
-## Reflexión
+## Entradas de la semana 6
+
+### Entrada 7
+
+- **Fecha:** 14 de noviembre de 2026
+- **Sugerencia o prompt:** Segunda revisión de código con el prompt de la semana: «Actúa como revisor de código Python con experiencia en seguridad. Contexto: módulo `prestamos/reglas.py` de Control VideoBeam FET (Django con SQLite, solo lo usa el bibliotecario, ADR-001 y ADR-002); te pego el código, las pruebas, el requirements.txt y el .gitignore. Tarea: revisa corrección, legibilidad y seguridad: inyección, secretos, contraseñas, control de acceso y dependencias. Formato: tabla línea | problema | severidad | corrección sugerida. Restricciones: no reescribas todo el código; separa los problemas seguros de las sospechas que habría que verificar.» La IA entregó 3 problemas seguros y 3 sospechas.
+- **Decisión:** Ajustada.
+- **Razón:** Acepté los 3 problemas seguros (versiones sin fijar, el `set` que devolvía la función y las excepciones duplicadas). Las 3 sospechas eran falsos positivos: inyección SQL (no hay SQL), XSS por el mensaje (no hay HTML y Django escapa) y `assert` en las pruebas. Además la IA no vio que el `.gitignore` ignoraba `.env.example`.
+- **Cómo la verifiqué:** Revisé cada línea que señaló, ejecuté la función con un `set` y con códigos manipulados, y probé el `.gitignore` con `git check-ignore -v`. El detalle está en la sección 3 de `revision_seguridad.md`.
+
+### Entrada 8
+
+- **Fecha:** 14 de noviembre de 2026
+- **Sugerencia o prompt:** Para el hallazgo H-03, la IA propuso cambiar `return prestados | {codigo}` por `return frozenset(prestados) | {codigo}`.
+- **Decisión:** Aceptada.
+- **Razón:** Con un `set` común la función devolvía un `set` que otro código podía modificar, y el contrato promete un `frozenset`. Como la corrección cambia el comportamiento, primero agregué una prueba nueva en lugar de modificar las existentes.
+- **Cómo la verifiqué:** La prueba nueva `test_si_recibe_un_set_comun_devuelve_frozenset_y_no_lo_modifica` falló antes del cambio («1 failed, 11 passed») y pasó después («12 passed»). Commit 91fc2b9.
+
+### Entrada 9
+
+- **Fecha:** 14 de noviembre de 2026
+- **Sugerencia o prompt:** Usé la IA como agente de código para el refactor H-04, con esta instrucción delimitada: «Eres un agente que trabaja en la rama agente/refactor-errores. Contexto: proyecto Control VideoBeam FET en Python; módulo prestamos/reglas.py. Tarea: crea una clase base ErrorDePrestamo con el código del videobeam, para que la vista atrape un solo error, y escribe docstrings con Args, Returns y Raises. Formato: al terminar resume los archivos cambiados y el resultado de pytest y ruff. Restricciones: solo toca prestamos/reglas.py; no toques tests/; no instales paquetes; los mensajes de error no pueden cambiar; si tienes que cambiar una prueba, detente y pregunta.»
+- **Decisión:** Aceptada después de revisar el diff.
+- **Razón:** Quita el texto repetido «El {codigo} …» y deja en cada error su código HTTP (404 y 409), como en la tabla de la API del diseño. Los mensajes que ve el bibliotecario son los mismos.
+- **Cómo la verifiqué:** `git diff --stat main..agente/refactor-errores` mostró solo `prestamos/reglas.py` y el diff de `tests/` salió vacío. Comprobé los mensajes y los códigos HTTP de cada error, y que el docstring dice lo mismo que el código (por ejemplo, que `None` da `VideobeamNoExiste`, como prueba el test de abuso). Pasaron las 17 pruebas y ruff dijo «All checks passed!». Integré con `git merge --no-ff` (commit 5996a84).
+
+### Entrada 10
+
+- **Fecha:** 14 de noviembre de 2026
+- **Sugerencia o prompt:** La IA sugirió como sospecha de severidad alta que el código del videobeam podía causar inyección SQL.
+- **Decisión:** Rechazada como corrección, pero la convertí en pruebas de abuso.
+- **Razón:** La función no arma ninguna consulta: compara el código contra el conjunto fijo `VIDEOBEAMS_DE_LA_BIBLIOTECA`. Cambiar el código por esto habría sido una corrección para un problema que no existe. Sí sirve dejar pruebas que lo demuestren, por si alguien cambia la regla.
+- **Cómo la verifiqué:** Agregué 5 pruebas de abuso (`' OR '1'='1`, `; DROP TABLE`, un `<script>`, un texto vacío y `None`). Todas dan `VideobeamNoExiste` y no cambian los prestados. Commit ad44f0b.
+
+## Reflexión de la semana 5
 
 El asistente me ayudó más a convertir la HU-08 en un contrato concreto, con firma, errores, supuestos y casos límite, y a pensar en casos que yo no habría probado, como que la función no modifique el conjunto que recibe o qué pasa cuando los 5 videobeams están prestados. Esta vez las pruebas no atraparon un error en la implementación, porque la primera versión pasó las 11 pruebas. Sí sirvieron para hacer el refactor con tranquilidad: sabía que si algo cambiaba, alguna prueba iba a fallar. El error más importante no lo atrapó una prueba sino la revisión contra mi diseño: el asistente me dijo que el proyecto era en HTML y localStorage, y el ADR-001 dice Django y SQLite. La próxima vez le pasaría el documento de diseño desde el primer mensaje y escribiría yo misma los casos límite antes de pedir sugerencias, para comparar mi lista con la del asistente.
+
+## Reflexión de la semana 6
+
+La revisión con IA fue útil para encontrar problemas reales rápido, pero la mitad de lo que marcó eran falsos positivos. Si hubiera copiado todo, habría «corregido» una inyección SQL en un código que no tiene SQL. Lo más importante, que el `.gitignore` ignoraba la plantilla `.env.example`, no lo encontró la IA: lo encontré con la lista de revisión, probando el archivo. Con el agente aprendí que la instrucción delimitada y el `git diff` antes de integrar son lo que permite confiar en su trabajo: sabía exactamente qué archivos podía tocar y lo comprobé.
