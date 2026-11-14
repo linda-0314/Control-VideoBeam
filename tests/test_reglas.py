@@ -74,3 +74,14 @@ def test_el_error_de_ya_prestado_no_cambia_los_prestados():
     with pytest.raises(VideobeamYaPrestado):
         prestar_videobeam("VB-02", prestados)
     assert prestados == frozenset({"VB-01", "VB-02"})
+
+
+# ----- Pruebas nuevas de la semana 6 (revisión de código) -----
+
+def test_si_recibe_un_set_comun_devuelve_frozenset_y_no_lo_modifica():
+    # H-03: el contrato promete un frozenset aunque la vista pase un set.
+    prestados = {"VB-01"}
+    resultado = prestar_videobeam("VB-02", prestados)
+    assert isinstance(resultado, frozenset)
+    assert resultado == frozenset({"VB-01", "VB-02"})
+    assert prestados == {"VB-01"}

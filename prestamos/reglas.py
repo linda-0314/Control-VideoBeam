@@ -27,4 +27,4 @@ def prestar_videobeam(codigo: str, prestados: frozenset[str]) -> frozenset[str]:
         raise VideobeamNoExiste(f"El {codigo} no existe")
     if codigo in prestados:
         raise VideobeamYaPrestado(f"El {codigo} ya está prestado")
-    return prestados | {codigo}
+    return frozenset(prestados) | {codigo}
