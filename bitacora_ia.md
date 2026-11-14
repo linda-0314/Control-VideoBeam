@@ -88,6 +88,32 @@ Asistente: Claude (claude.ai), con acceso a un entorno para crear archivos, ejec
 - **Razón:** La función no arma ninguna consulta: compara el código contra el conjunto fijo `VIDEOBEAMS_DE_LA_BIBLIOTECA`. Cambiar el código por esto habría sido una corrección para un problema que no existe. Sí sirve dejar pruebas que lo demuestren, por si alguien cambia la regla.
 - **Cómo la verifiqué:** Agregué 5 pruebas de abuso (`' OR '1'='1`, `; DROP TABLE`, un `<script>`, un texto vacío y `None`). Todas dan `VideobeamNoExiste` y no cambian los prestados. Commit ad44f0b.
 
+## Entradas después de la semana 6 (HU-01, HU-02 y HU-04)
+
+### Entrada 11
+
+- **Fecha:** 14 de noviembre de 2026
+- **Sugerencia o prompt:** «Actúa como desarrollador Python que trabaja con pruebas primero en la rama hu-must. Contexto: proyecto Control VideoBeam FET; la regla de HU-08 ya está en prestamos/reglas.py con 17 pruebas; te paso los escenarios de HU-01, HU-02 y HU-04 del documento de requisitos y la tabla de API del diseño (400, 404 y 409). Tarea: escribe primero las pruebas de las tres historias, con casos normales, límite y de error, haz un commit en rojo, después la implementación y un refactor. Formato: al terminar resume archivos, pruebas y resultado de pytest y ruff. Restricciones: Python puro sin Django, no cambies las pruebas existentes, la hora llega como parámetro y no inventes mensajes sin avisarme.» La IA escribió 26 pruebas nuevas y propuso el mensaje «Falta la clase», que no está en el documento de requisitos.
+- **Decisión:** Ajustada.
+- **Razón:** Los mensajes «Falta el nombre del profesor» (HU-02) y «Escribe el nombre de quien lleva el videobeam» (HU-03) sí salen de mis requisitos. «Falta la clase» lo propuso la IA, porque la clase también es obligatoria en el préstamo. Lo dejé, pero como supuesto que hay que confirmar con el bibliotecario.
+- **Cómo la verifiqué:** Comparé cada mensaje de las pruebas con los escenarios del documento de requisitos de la semana 3. Commit en rojo 305435f: «26 failed, 17 passed».
+
+### Entrada 12
+
+- **Fecha:** 14 de noviembre de 2026
+- **Sugerencia o prompt:** Para HU-04 la IA agregó dos reglas que no estaban en la historia: rechazar una devolución con hora anterior a la salida, y permitir la devolución al día siguiente.
+- **Decisión:** Aceptada.
+- **Razón:** Una devolución antes de la salida es un dato imposible, seguramente un error al escribir la hora, y guardarlo dañaría el registro. Devolver al día siguiente tiene que ser posible porque HU-06 dice que un videobeam puede quedar sin devolver en su jornada, y por eso en el diseño cambié hora_devolucion por fecha_hora_devolucion.
+- **Cómo la verifiqué:** Revisé HU-06 y el modelo de datos de la sección 5 del diseño. Las pruebas `test_la_devolucion_no_puede_ser_anterior_a_la_salida` y `test_se_puede_devolver_al_dia_siguiente` pasan. Commit en verde 31d5b81: «43 passed».
+
+### Entrada 13
+
+- **Fecha:** 14 de noviembre de 2026
+- **Sugerencia o prompt:** Refactor con las pruebas en verde. La IA propuso sacar la validación repetida tres veces a `_texto_obligatorio`, la búsqueda del préstamo abierto a `_prestamo_abierto`, crear la propiedad `esta_abierto` y la constante `TOTAL_VIDEOBEAMS`, y escribir docstrings con Args, Returns y Raises.
+- **Decisión:** Aceptada.
+- **Razón:** Quita duplicación y un for con un if anidado. La función `registrar_devolucion` se lee en el mismo orden de los errores del docstring.
+- **Cómo la verifiqué:** Comparé cada docstring con el código: el orden en que se revisan los datos, los mensajes exactos y que no se modifica la lista recibida. Con `git diff --stat` vi que `tests/` no cambió. Pasaron las 43 pruebas y ruff dijo «All checks passed!». Commit 10f17dc.
+
 ## Reflexión de la semana 5
 
 El asistente me ayudó más a convertir la HU-08 en un contrato concreto, con firma, errores, supuestos y casos límite, y a pensar en casos que yo no habría probado, como que la función no modifique el conjunto que recibe o qué pasa cuando los 5 videobeams están prestados. Esta vez las pruebas no atraparon un error en la implementación, porque la primera versión pasó las 11 pruebas. Sí sirvieron para hacer el refactor con tranquilidad: sabía que si algo cambiaba, alguna prueba iba a fallar. El error más importante no lo atrapó una prueba sino la revisión contra mi diseño: el asistente me dijo que el proyecto era en HTML y localStorage, y el ADR-001 dice Django y SQLite. La próxima vez le pasaría el documento de diseño desde el primer mensaje y escribiría yo misma los casos límite antes de pedir sugerencias, para comparar mi lista con la del asistente.
