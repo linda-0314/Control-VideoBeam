@@ -1,7 +1,8 @@
-"""Reglas del préstamo de videobeams.
+"""Reglas del préstamo de videobeams y errores de la app de préstamos.
 
-Python puro, sin Django: la vista de POST /prestamos llama estas funciones
-antes de guardar y responde con el `estado_http` del error que se lance
+Python puro, sin Django: las vistas llaman estas funciones antes de guardar y
+responden con el `estado_http` del error que se lance: 400 DatoInvalido,
+404 VideobeamNoExiste y 409 VideobeamYaPrestado o VideobeamNoPrestado
 (documento de diseño, sección 6).
 """
 
@@ -77,7 +78,11 @@ class VideobeamNoPrestado(ErrorDePrestamo):
 
 
 class DatoInvalido(ErrorDePrestamo):
-    """Falta un dato del formulario o no es válido (HU-02, escenario 2; API: 400)."""
+    """Falta un dato del formulario o no es válido (HU-02, escenario 2; API: 400).
+
+    A diferencia de los otros errores, no depende de un videobeam: recibe el
+    mensaje completo y deja `codigo` en None.
+    """
 
     estado_http = 400
 
