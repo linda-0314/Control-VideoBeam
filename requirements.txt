@@ -1,1 +1,4 @@
-pytest>=8
+# Versiones fijadas (semana 6). Solo herramientas de desarrollo: la regla de prestamos/
+# no usa paquetes externos. Django se agregará con su versión fijada al crear las vistas.
+pytest==9.2.0
+ruff==0.16.9
