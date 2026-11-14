@@ -85,3 +85,17 @@ def test_si_recibe_un_set_comun_devuelve_frozenset_y_no_lo_modifica():
     assert isinstance(resultado, frozenset)
     assert resultado == frozenset({"VB-01", "VB-02"})
     assert prestados == {"VB-01"}
+
+
+# ----- Pruebas de abuso: entradas manipuladas -----
+
+@pytest.mark.parametrize(
+    "codigo_manipulado",
+    ["VB-01' OR '1'='1", "VB-01; DROP TABLE prestamo", "<script>alert(1)</script>", "", None],
+)
+def test_codigo_manipulado_se_rechaza_sin_cambiar_los_prestados(codigo_manipulado):
+    # Alguien edita el formulario y envía un código que no viene de la lista.
+    prestados = frozenset({"VB-01"})
+    with pytest.raises(VideobeamNoExiste):
+        prestar_videobeam(codigo_manipulado, prestados)
+    assert prestados == frozenset({"VB-01"})
