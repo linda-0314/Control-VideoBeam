@@ -67,3 +67,20 @@ def prestar_videobeam(codigo: str, prestados: Set[str]) -> frozenset[str]:
     if codigo in prestados:
         raise VideobeamYaPrestado(codigo)
     return frozenset(prestados) | {codigo}
+
+
+class VideobeamNoPrestado(ErrorDePrestamo):
+    """Se intenta devolver un videobeam sin préstamo abierto (HU-04, escenario 2; API: 409)."""
+
+    plantilla = "El {codigo} no está prestado"
+    estado_http = 409
+
+
+class DatoInvalido(ErrorDePrestamo):
+    """Falta un dato del formulario o no es válido (HU-02, escenario 2; API: 400)."""
+
+    estado_http = 400
+
+    def __init__(self, mensaje: str) -> None:
+        self.codigo = None
+        Exception.__init__(self, mensaje)
