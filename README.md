@@ -1,85 +1,118 @@
 # Control VideoBeam FET
 
-Aplicación web para que el bibliotecario de la Fundación Escuela Tecnológica de Neiva (FET) registre el préstamo y la devolución de los 5 videobeams de la biblioteca (VB-01 a VB-05) y sepa al instante cuántos hay disponibles.
+## 1. Qué es
 
-- Estudiante: Linda Paola Carreño Meneses
-- Seminario en Inteligencia Artificial aplicada al ciclo de vida del software, FET, 2026
-- Diseño (semana 4, ADR-001): aplicación web monolítica en Python con Django y SQLite, instalada en el computador de la biblioteca. Solo la usa el bibliotecario (ADR-002).
+Aplicación para que el bibliotecario de la Fundación Escuela Tecnológica de Neiva (FET) registre el préstamo y la devolución de los 5 videobeams de la biblioteca (VB-01 a VB-05) y sepa al instante cuántos hay disponibles, en lugar de usar la planilla en papel.
 
-## Estructura
+Diseño (semana 4): aplicación web monolítica en Python con Django y SQLite, instalada en el computador de la biblioteca (ADR-001). Solo la usa el bibliotecario (ADR-002).
 
+**Estado actual (semana 6):** está hecha y probada la regla de la HU-08 «No prestar uno ya prestado», en `prestamos/reglas.py`. Las vistas de Django, la base de datos y el inicio de sesión todavía no existen.
+
+## 2. Requisitos
+
+- Python 3.10 o más reciente (probado con Python 3.13).
+- Git.
+- Dependencias, con versión fijada en `requirements.txt`:
+  - `pytest==9.2.0` para las pruebas.
+  - `ruff==0.16.9` para el linter.
+
+La regla de `prestamos/` no usa paquetes externos.
+
+## 3. Instalación
+
+En Windows (PowerShell):
+
+```powershell
+git clone https://github.com/linda-0314/Control-VideoBeam.git
+cd Control-VideoBeam
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 ```
-Control-VideoBeam/
-├── prestamos/          # app de préstamos (ADR-001)
-│   ├── __init__.py
-│   └── reglas.py       # reglas del préstamo en Python puro, sin Django
-├── tests/
-│   └── test_reglas.py  # pruebas con pytest
-├── bitacora_ia.md      # bitácora de uso de IA
-├── pytest.ini
-└── requirements.txt
+
+En Linux o macOS, cambia la activación por `source .venv/bin/activate`.
+
+Si PowerShell no deja ejecutar `Activate.ps1`, ejecuta una vez `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+
+Cuando exista la aplicación de Django, se copiará `.env.example` como `.env` y se llenará `DJANGO_SECRET_KEY`. El archivo `.env` no se sube a Git.
+
+## 4. Ejecución
+
+Todavía no hay interfaz. Para usar la regla de préstamo desde la terminal:
+
+```powershell
+python -c "from prestamos.reglas import prestar_videobeam; print(prestar_videobeam('VB-04', {'VB-01'}))"
 ```
 
-Las reglas del préstamo van en `prestamos/reglas.py`, en Python puro, para poder probarlas sin base de datos ni servidor. La vista de Django de `POST /prestamos` (diseño, sección 6) las va a llamar antes de guardar y va a convertir los errores en los códigos 404 y 409.
+Resultado esperado: `frozenset({'VB-01', 'VB-04'})` (el orden puede variar).
 
-## Funcionalidad de la semana 5
+Si el videobeam ya está prestado, la función lanza `VideobeamYaPrestado` con el mensaje «El VB-01 ya está prestado».
 
-### Historia de usuario
+## 5. Pruebas
 
-**HU-08. No prestar uno ya prestado** (prioridad Must, necesidad N-01)
+```powershell
+pytest
+```
 
-Como bibliotecario, quiero que el sistema no me deje prestar un videobeam que ya está prestado para que la disponibilidad que consulto sea real.
+Ejecuta las 17 pruebas de `tests/`: casos normales, límite, de error y de abuso (códigos manipulados en el formulario).
 
-Criterios de aceptación:
+Linter con reglas de estilo, errores, errores probables y seguridad (configurado en `pyproject.toml`):
 
-- Escenario 1: prestar uno disponible. Dado que el VB-04 está disponible, cuando registro su préstamo, entonces el VB-04 pasa a prestado y deja de aparecer como libre.
-- Escenario 2 (error): prestar uno ya prestado. Dado que el VB-01 está prestado a «Mateo Díaz», cuando intento registrar otro préstamo del VB-01, entonces el sistema no lo permite y muestra «El VB-01 ya está prestado».
+```powershell
+ruff check .
+```
 
-### Contrato
+Auditoría de dependencias:
+
+```powershell
+pip install pip-audit
+pip-audit -r requirements.txt
+```
+
+### Contrato de la funcionalidad (HU-08)
 
 ```python
-def prestar_videobeam(codigo: str, prestados: frozenset[str]) -> frozenset[str]
+def prestar_videobeam(codigo: str, prestados: Set[str]) -> frozenset[str]
 ```
-
-- **Qué recibe:**
-  - `codigo`: el código del videobeam que se quiere prestar, por ejemplo `"VB-04"`.
-  - `prestados`: los códigos de los videobeams que están prestados en este momento, es decir, los que tienen un préstamo sin devolución.
-- **Qué devuelve:** un conjunto nuevo con los prestados más `codigo`. El conjunto que recibe no se modifica.
-- **Errores:**
-  - `VideobeamYaPrestado` con el mensaje `"El VB-01 ya está prestado"` si `codigo` ya está en `prestados`. Esto es el escenario 2 de HU-08 y en la API es el 409.
-  - `VideobeamNoExiste` con el mensaje `"El VB-09 no existe"` si `codigo` no es uno de los 5 videobeams de la biblioteca. En la API es el 404.
-- **Supuestos:**
-  - La biblioteca tiene 5 videobeams: VB-01, VB-02, VB-03, VB-04 y VB-05.
-  - El código llega exacto, como lo envía la lista del formulario: en mayúsculas y sin espacios. `"vb-02"` o `" VB-02"` se tratan como códigos que no existen.
-  - `prestados` solo trae códigos válidos.
-  - La función no guarda nada. Guardar el préstamo con quién lo lleva, la clase y el profesor es trabajo de la vista de Django (HU-02).
-- **Casos límite:**
-  - No hay ningún videobeam prestado (`prestados` vacío).
-  - Primer videobeam (VB-01) y último videobeam (VB-05).
-  - Se presta el último que quedaba libre: 4 prestados pasan a 5.
-  - Ya están los 5 prestados: cualquier préstamo da `VideobeamYaPrestado`.
-
-### Ejemplos de entrada y salida
 
 | Entrada | Salida |
 |---|---|
 | `prestar_videobeam("VB-04", frozenset({"VB-01"}))` | `frozenset({"VB-01", "VB-04"})` |
-| `prestar_videobeam("VB-02", frozenset())` | `frozenset({"VB-02"})` |
-| `prestar_videobeam("VB-05", frozenset({"VB-01", "VB-02", "VB-03", "VB-04"}))` | `frozenset({"VB-01", "VB-02", "VB-03", "VB-04", "VB-05"})` |
-| `prestar_videobeam("VB-01", frozenset({"VB-01"}))` | error `VideobeamYaPrestado`: «El VB-01 ya está prestado» |
-| `prestar_videobeam("VB-09", frozenset())` | error `VideobeamNoExiste`: «El VB-09 no existe» |
+| `prestar_videobeam("VB-05", frozenset({"VB-01", "VB-02", "VB-03", "VB-04"}))` | los 5 prestados |
+| `prestar_videobeam("VB-01", frozenset({"VB-01"}))` | `VideobeamYaPrestado`: «El VB-01 ya está prestado» (API: 409) |
+| `prestar_videobeam("VB-09", frozenset())` | `VideobeamNoExiste`: «El VB-09 no existe» (API: 404) |
 
-### Cómo ejecutar las pruebas
+Supuestos: el código llega exacto desde la lista del formulario (`"vb-02"` se trata como inexistente) y `prestados` no se modifica.
 
-Se necesita Python 3.10 o más reciente.
+## 6. Estructura
 
-```bash
-pip install -r requirements.txt
-pytest
+```
+Control-VideoBeam/
+├── prestamos/              # app de préstamos (ADR-001)
+│   ├── __init__.py
+│   └── reglas.py           # regla de HU-08 en Python puro y errores ErrorDePrestamo
+├── tests/
+│   └── test_reglas.py      # 17 pruebas con pytest
+├── .env.example            # plantilla de variables de entorno (sin valores reales)
+├── .gitignore              # ignora .env, cachés y db.sqlite3
+├── bitacora_ia.md          # bitácora de uso de IA (semanas 5 y 6)
+├── pyproject.toml          # configuración de ruff y pytest
+├── requirements.txt        # dependencias con versión fijada
+├── revision_seguridad.md   # informe de revisión de código y seguridad (semana 6)
+└── README.md
 ```
 
-Con un solo comando (`pytest`) se ejecutan todas las pruebas de la carpeta `tests/`.
+## 7. Uso de IA
 
-## Uso de IA
+Usé Claude (claude.ai) como asistente durante todo el proyecto:
 
-El registro de las sugerencias del asistente que acepté, ajusté o rechacé está en [bitacora_ia.md](bitacora_ia.md).
+- Semana 5: para convertir la HU-08 en contrato y pruebas, con el ciclo rojo, verde y refactor.
+- Semana 6: para la segunda revisión de código y seguridad, y como agente de código en la rama `agente/refactor-errores`. Revisé su diff antes de integrarlo.
+
+Cada sugerencia la verifiqué contra el diseño, las pruebas y el linter. Rechacé las que contradecían el ADR-001 o eran falsos positivos. El detalle está en [bitacora_ia.md](bitacora_ia.md) y los hallazgos en [revision_seguridad.md](revision_seguridad.md).
+
+## 8. Autor y licencia
+
+- Autora: Linda Paola Carreño Meneses.
+- Seminario en Inteligencia Artificial aplicada al ciclo de vida del software. Docente: Jorge Luis Trujillo. Fundación Escuela Tecnológica FET, 2026.
+- Licencia: trabajo académico, todos los derechos reservados por la autora. No tiene licencia de código abierto por ahora.
