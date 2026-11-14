@@ -1,6 +1,8 @@
 # Variables de entorno y claves: nunca se suben
 .env
 .env.*
+# La plantilla sin valores reales sí se sube
+!.env.example
 
 # Python
 __pycache__/
