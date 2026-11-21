@@ -1,4 +1,4 @@
-# Bitácora de uso de IA – Semanas 5 y 6
+# Bitácora de uso de IA
 
 Proyecto: Control VideoBeam FET · Funcionalidad: HU-08, no prestar un videobeam ya prestado
 Estudiante: Linda Paola Carreño Meneses
@@ -113,6 +113,40 @@ Asistente: Claude (claude.ai), con acceso a un entorno para crear archivos, ejec
 - **Decisión:** Aceptada.
 - **Razón:** Quita duplicación y un for con un if anidado. La función `registrar_devolucion` se lee en el mismo orden de los errores del docstring.
 - **Cómo la verifiqué:** Comparé cada docstring con el código: el orden en que se revisan los datos, los mensajes exactos y que no se modifica la lista recibida. Con `git diff --stat` vi que `tests/` no cambió. Pasaron las 43 pruebas y ruff dijo «All checks passed!». Commit 10f17dc.
+
+## Entradas del 21 de noviembre (aplicación de Django)
+
+### Entrada 14
+
+- **Fecha:** 21 de noviembre de 2026
+- **Sugerencia o prompt:** «Revisa el código.» La IA revisó la rama `main` y las reglas de HU-01, HU-02 y HU-04 con todas las reglas de ruff. Encontró que las pruebas usaban fechas sin zona horaria (DTZ001), y que con Django (`USE_TZ = True`) comparar una fecha con zona y otra sin zona en `registrar_devolucion` lanza `TypeError`. También encontró los imports sin ordenar (I001) y el nombre `Set`, que se confunde con `set` (PYI025).
+- **Decisión:** Aceptada.
+- **Razón:** El error de las fechas solo habría aparecido al conectar Django, que era lo siguiente que iba a hacer. Las pruebas cambiaron solo en sus datos (fechas con `ZoneInfo("America/Bogota")`), no en lo que comprueban.
+- **Cómo la verifiqué:** `ruff check --select DTZ,I,PYI .` sin avisos y 43 pruebas en verde. Commit «Revisión del 21 de noviembre».
+
+### Entrada 15
+
+- **Fecha:** 21 de noviembre de 2026
+- **Sugerencia o prompt:** «Hazme la mitad de lo que falta.» Le pedí a la IA el proyecto Django con los modelos, las pantallas de las cuatro historias Must y el inicio de sesión, con pruebas primero, respetando el ADR-001 (Django y SQLite) y el ADR-002 (solo el bibliotecario). Su entorno no podía instalar Django, así que para probar copió el Django 5.2.1 que tengo instalado en mi computador.
+- **Decisión:** Ajustada.
+- **Razón:** La IA propuso fijar `Django==5.2.18` en `requirements.txt` porque es la última versión 5.2 con parches de seguridad (la 5.2.1 tiene vulnerabilidades corregidas después). Lo acepté, pero las pruebas se ejecutaron con la 5.2.1. Por eso tengo que instalar las dependencias y correr `pytest` y `pip-audit` en mi computador para confirmar.
+- **Cómo la verifiqué:** 20 pruebas web en rojo antes de las vistas y 63 en verde después, sin cambiar ninguna prueba. Además se probó con `runserver`: inicio de sesión, préstamo, «4 de 5 videobeams disponibles», 403 sin token CSRF y contraseña guardada con `scrypt$`.
+
+### Entrada 16
+
+- **Fecha:** 21 de noviembre de 2026
+- **Sugerencia o prompt:** La IA propuso proteger HU-08 también en la base de datos, con una restricción única condicional: un solo préstamo sin devolución por videobeam.
+- **Decisión:** Aceptada.
+- **Razón:** La regla de `reglas.py` revisa y después se guarda. Si dos préstamos del mismo videobeam llegan casi al mismo tiempo, los dos podrían pasar la revisión. Con la restricción, la base rechaza el segundo y la vista responde 409 «El VB-0X ya está prestado».
+- **Cómo la verifiqué:** La prueba `test_la_base_no_permite_dos_prestamos_abiertos_del_mismo_videobeam` crea dos préstamos abiertos del VB-03 directamente en la base y comprueba que el segundo da `IntegrityError`.
+
+### Entrada 17
+
+- **Fecha:** 21 de noviembre de 2026
+- **Sugerencia o prompt:** En el diseño, una petición sin sesión debe responder 401. La IA hizo que las páginas sin sesión redirijan (302) a la página de inicio de sesión.
+- **Decisión:** Ajustada.
+- **Razón:** Para las páginas HTML que usa el bibliotecario, mandarlo a iniciar sesión es más útil que una página de error 401. El 401 queda para cuando se haga la API en JSON. Lo anoté en los pendientes de `revision_seguridad.md`.
+- **Cómo la verifiqué:** Las pruebas de abuso comprueban que, sin sesión, `POST /prestamos/` y `POST /devoluciones/` redirigen a `/cuentas/login/` y no guardan nada.
 
 ## Reflexión de la semana 5
 

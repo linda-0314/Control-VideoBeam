@@ -59,11 +59,14 @@ Después de las correcciones, `ruff check .` dice «All checks passed!» y las 1
 
 ## 4. Pendientes
 
-| Pendiente                           | Por qué no se corrigió todavía                                     | Plan                                                                                                                                            |
-| ----------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Contraseñas con scrypt o argon2     | El inicio de sesión del bibliotecario (ADR-002) no existe todavía. | Al crear el proyecto Django, poner `ScryptPasswordHasher` de primero en `PASSWORD_HASHERS` y probar que el hash guardado empiece con `scrypt$`. |
-| Control de acceso y prueba de abuso | Todavía no hay vistas.                                             | `login_required` en todas las vistas y una prueba de abuso: `POST /prestamos` sin sesión debe dar 401 y no guardar nada.                        |
-| No mostrar mensajes con `\|safe`    | Todavía no hay plantillas.                                         | Dejarlo en la lista de revisión de la semana en que se hagan las plantillas.                                                                    |
-| Fijar la versión de Django          | Django todavía no se usa.                                          | Agregarlo a `requirements.txt` con versión exacta y pasar pip-audit otra vez.                                                                   |
+| Pendiente | Por qué no se corrigió todavía | Plan |
+|---|---|---|
+| ~~Contraseñas con scrypt o argon2~~ | **Resuelto el 21 de noviembre.** `ScryptPasswordHasher` va de primero en `PASSWORD_HASHERS`. | Prueba `test_la_contrasena_se_guarda_con_scrypt`: el hash empieza con `scrypt$`. |
+| ~~Control de acceso y prueba de abuso~~ | **Resuelto el 21 de noviembre.** Todas las vistas tienen `login_required`. | Pruebas de abuso: sin sesión, `POST /prestamos/` y `POST /devoluciones/` redirigen al inicio de sesión y no guardan nada. Es una página HTML, así que redirige (302) en vez del 401 de la API del diseño. |
+| ~~No mostrar mensajes con `\|safe`~~ | **Resuelto el 21 de noviembre.** Las plantillas no usan `\|safe` y Django escapa el texto. | Prueba `test_abuso_un_nombre_con_html_se_muestra_como_texto`: un `<script>` en el nombre se muestra como texto. |
+| ~~Fijar la versión de Django~~ | **Resuelto el 21 de noviembre.** `Django==5.2.18`, la última versión 5.2 con parches de seguridad (6 de octubre de 2026). | Pasar `pip-audit -r requirements.txt` otra vez en el computador de desarrollo y anotar el resultado. |
+| Dos préstamos del mismo videobeam al mismo tiempo | **Resuelto el 21 de noviembre.** Restricción `un_prestamo_abierto_por_videobeam` en la base de datos. Si salta, la vista responde 409. | Prueba `test_la_base_no_permite_dos_prestamos_abiertos_del_mismo_videobeam`. |
+| API en JSON (sección 6 del diseño) | Las pantallas usan formularios HTML con CSRF. La API todavía no existe. | Cuando se haga, responder 401 sin sesión y repetir las pruebas de abuso. |
+| `DEBUG` en el computador de la biblioteca | Depende de cómo se instale. | Dejar `DJANGO_DEBUG=False` en el `.env` de la biblioteca, como en `.env.example`. |
 
-**Claves expuestas:** Ninguna. Revisé todo el historial con `git log -p --all` y no hay claves, contraseñas ni archivos `.env`.
+**Claves expuestas:** Ninguna. Revisé todo el historial con `git log -p --all` y no hay claves, contraseñas ni archivos `.env`. La clave de las pruebas (`tests/conftest.py`) solo sirve para la base de datos en memoria de las pruebas.

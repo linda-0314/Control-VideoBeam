@@ -2,21 +2,30 @@
 
 ## 1. Qué es
 
-Aplicación para que el bibliotecario de la Fundación Escuela Tecnológica de Neiva (FET) registre el préstamo y la devolución de los 5 videobeams de la biblioteca (VB-01 a VB-05) y sepa al instante cuántos hay disponibles, en lugar de usar la planilla en papel.
+Aplicación web para que el bibliotecario de la Fundación Escuela Tecnológica de Neiva (FET) registre el préstamo y la devolución de los 5 videobeams de la biblioteca (VB-01 a VB-05) y sepa al instante cuántos hay disponibles, en lugar de usar la planilla en papel.
 
 Diseño (semana 4): aplicación web monolítica en Python con Django y SQLite, instalada en el computador de la biblioteca (ADR-001). Solo la usa el bibliotecario (ADR-002).
 
-**Estado actual:** están hechas y probadas las reglas de las cuatro historias Must: HU-01 «Consultar disponibilidad», HU-02 «Registrar préstamo», HU-04 «Registrar devolución» y HU-08 «No prestar uno ya prestado», en `prestamos/`. Las vistas de Django, la base de datos y el inicio de sesión todavía no existen.
+**Estado actual:**
+
+| Parte | Estado |
+|---|---|
+| HU-01 Consultar disponibilidad (Must) | ✅ Página de inicio |
+| HU-02 Registrar préstamo (Must) | ✅ Formulario de préstamo |
+| HU-04 Registrar devolución (Must) | ✅ Formulario de devolución |
+| HU-08 No prestar uno ya prestado (Must) | ✅ Regla y restricción en la base de datos |
+| Inicio de sesión del bibliotecario con scrypt | ✅ |
+| HU-03, HU-05 y HU-06 (Should), HU-07 (Could) | Pendientes |
+| API en JSON de la sección 6 del diseño | Pendiente: por ahora las pantallas usan formularios HTML |
 
 ## 2. Requisitos
 
 - Python 3.10 o más reciente (probado con Python 3.13).
 - Git.
 - Dependencias, con versión fijada en `requirements.txt`:
+  - `Django==5.2.18` (versión LTS con los últimos parches de seguridad). Instala también `asgiref`, `sqlparse` y `tzdata`.
   - `pytest==9.2.0` para las pruebas.
   - `ruff==0.16.9` para el linter.
-
-La regla de `prestamos/` no usa paquetes externos.
 
 ## 3. Instalación
 
@@ -28,31 +37,45 @@ cd Control-VideoBeam
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+copy .env.example .env
 ```
 
-En Linux o macOS, cambia la activación por `source .venv/bin/activate`.
+Abre `.env` y escribe una clave secreta en `DJANGO_SECRET_KEY`. Para generar una:
+
+```powershell
+python -c "import secrets; print(secrets.token_urlsafe(50))"
+```
+
+Después crea la base de datos (con los 5 videobeams) y el usuario del bibliotecario:
+
+```powershell
+python manage.py migrate
+python manage.py createsuperuser
+```
+
+`createsuperuser` pide un nombre de usuario y una contraseña; el correo se puede dejar vacío. La contraseña se guarda con scrypt.
+
+En Linux o macOS, cambia la activación por `source .venv/bin/activate` y `copy` por `cp`.
 
 Si PowerShell no deja ejecutar `Activate.ps1`, ejecuta una vez `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
 
-Cuando exista la aplicación de Django, se copiará `.env.example` como `.env` y se llenará `DJANGO_SECRET_KEY`. El archivo `.env` no se sube a Git.
-
 ## 4. Ejecución
 
-Todavía no hay interfaz. Para probar las reglas desde la terminal:
-
 ```powershell
-python -c "from prestamos.reglas import prestar_videobeam; print(prestar_videobeam('VB-04', {'VB-01'}))"
+python manage.py runserver
 ```
 
-Resultado esperado: `frozenset({'VB-01', 'VB-04'})` (el orden puede variar). Si el videobeam ya está prestado, la función lanza `VideobeamYaPrestado` con el mensaje «El VB-01 ya está prestado».
+Abre http://127.0.0.1:8000/ en el navegador del computador de la biblioteca e inicia sesión con el usuario que creaste. En la página de inicio verás:
 
-Un préstamo y la disponibilidad (HU-02 y HU-01):
+- Cuántos videobeams hay disponibles («4 de 5 videobeams disponibles») y el estado de cada uno, con quién lo lleva, la clase, el profesor y la hora de salida.
+- El formulario **Registrar préstamo**: solo deja escoger videobeams disponibles.
+- El formulario **Registrar devolución**: solo deja escoger videobeams prestados y guarda la fecha y la hora del momento.
 
-```powershell
-python -c "from datetime import datetime; from prestamos.registro import registrar_prestamo, mensaje_disponibilidad; p = registrar_prestamo('VB-02', [], 'Laura Gómez', 'Bases de datos', 'Andrés Ruiz', datetime(2026, 11, 14, 18, 40)); print(mensaje_disponibilidad([p]))"
-```
+Si falta un dato o el videobeam ya está prestado, la página muestra el mensaje en rojo («Falta el nombre del profesor», «El VB-01 ya está prestado») y no guarda nada.
 
-Resultado esperado: `4 de 5 videobeams disponibles`.
+La planilla completa, con los préstamos ya devueltos, se consulta en http://127.0.0.1:8000/admin/.
+
+**Copia de seguridad:** todos los préstamos están en el archivo `db.sqlite3`. Para respaldarlos, cierra el servidor y copia ese archivo.
 
 ## 5. Pruebas
 
@@ -60,7 +83,7 @@ Resultado esperado: `4 de 5 videobeams disponibles`.
 pytest
 ```
 
-Ejecuta las 43 pruebas de `tests/`: casos normales, límite, de error y de abuso (códigos manipulados en el formulario) de HU-01, HU-02, HU-04 y HU-08.
+Ejecuta las 63 pruebas de `tests/`: las reglas de HU-01, HU-02, HU-04 y HU-08 (43 pruebas) y la aplicación web (20 pruebas: páginas, inicio de sesión, control de acceso, abuso con códigos manipulados y HTML, contraseña con scrypt y RNF-01). Las pruebas web crean una base de datos en memoria, así que no tocan `db.sqlite3`.
 
 Linter con reglas de estilo, errores, errores probables y seguridad (configurado en `pyproject.toml`):
 
@@ -89,7 +112,7 @@ Ninguna función modifica la lista que recibe ni toma la hora del reloj: la hora
 #### HU-08 en detalle
 
 ```python
-def prestar_videobeam(codigo: str, prestados: Set[str]) -> frozenset[str]
+def prestar_videobeam(codigo: str, prestados: AbstractSet[str]) -> frozenset[str]
 ```
 
 | Entrada | Salida |
@@ -105,24 +128,34 @@ Supuestos: el código llega exacto desde la lista del formulario (`"vb-02"` se t
 
 ```
 Control-VideoBeam/
+├── config/                 # proyecto Django: settings.py (lee .env), urls.py, wsgi.py
 ├── prestamos/              # app de préstamos (ADR-001)
-│   ├── __init__.py
 │   ├── reglas.py           # regla de HU-08 y errores ErrorDePrestamo (400, 404, 409)
-│   └── registro.py         # Prestamo, HU-01 disponibilidad, HU-02 préstamo, HU-04 devolución
+│   ├── registro.py         # reglas de HU-01, HU-02 y HU-04 en Python puro
+│   ├── models.py           # Videobeam y Prestamo (diseño, sección 5)
+│   ├── views.py            # inicio, crear_prestamo y registrar_devolucion
+│   ├── urls.py             # rutas /, /prestamos/ y /devoluciones/
+│   ├── admin.py            # planilla completa en /admin/
+│   ├── migrations/         # tablas y los 5 videobeams iniciales
+│   └── templates/          # páginas HTML: inicio y inicio de sesión
 ├── tests/
-│   ├── conftest.py         # datos de prueba compartidos
+│   ├── conftest.py         # datos de prueba y base de datos de prueba de Django
 │   ├── test_reglas.py      # HU-08 (17 pruebas)
-│   ├── test_disponibilidad.py   # HU-01 (6 pruebas)
+│   ├── test_disponibilidad.py    # HU-01 (6 pruebas)
 │   ├── test_registro_prestamo.py # HU-02 (11 pruebas)
-│   └── test_devolucion.py  # HU-04 (9 pruebas)
+│   ├── test_devolucion.py  # HU-04 (9 pruebas)
+│   └── test_web.py         # aplicación web (20 pruebas)
+├── manage.py               # comandos de Django
 ├── .env.example            # plantilla de variables de entorno (sin valores reales)
 ├── .gitignore              # ignora .env, cachés y db.sqlite3
-├── bitacora_ia.md          # bitácora de uso de IA (semanas 5 y 6)
+├── bitacora_ia.md          # bitácora de uso de IA
 ├── pyproject.toml          # configuración de ruff y pytest
 ├── requirements.txt        # dependencias con versión fijada
-├── revision_seguridad.md   # informe de revisión de código y seguridad (semana 6)
+├── revision_seguridad.md   # informe de revisión de código y seguridad
 └── README.md
 ```
+
+Las reglas están separadas de Django a propósito: `reglas.py` y `registro.py` deciden si un préstamo o una devolución es válido, y las vistas solo leen la base, llaman esas reglas y guardan el resultado.
 
 ## 7. Uso de IA
 
@@ -130,7 +163,7 @@ Usé Claude (claude.ai) como asistente durante todo el proyecto:
 
 - Semana 5: para convertir la HU-08 en contrato y pruebas, con el ciclo rojo, verde y refactor.
 - Semana 6: para la segunda revisión de código y seguridad, y como agente de código en la rama `agente/refactor-errores`. Revisé su diff antes de integrarlo.
-- Después de la semana 6: para escribir con pruebas primero las reglas de HU-01, HU-02 y HU-04 en la rama `hu-must`.
+- Después de la semana 6: para escribir con pruebas primero las reglas de HU-01, HU-02 y HU-04, y después la aplicación de Django (modelos, vistas, pantallas e inicio de sesión) de las cuatro historias Must.
 
 Cada sugerencia la verifiqué contra el diseño, las pruebas y el linter. Rechacé las que contradecían el ADR-001 o eran falsos positivos. El detalle está en [bitacora_ia.md](bitacora_ia.md) y los hallazgos en [revision_seguridad.md](revision_seguridad.md).
 
