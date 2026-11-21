@@ -1,4 +1,5 @@
-# Versiones fijadas (semana 6). Solo herramientas de desarrollo: la regla de prestamos/
-# no usa paquetes externos. Django se agregará con su versión fijada al crear las vistas.
+# Versiones fijadas. Django 5.2 es LTS; 5.2.18 (6 de octubre de 2026) es la última
+# versión con parches de seguridad. Django instala asgiref, sqlparse y tzdata.
+Django==5.2.18
 pytest==9.2.0
 ruff==0.16.9
