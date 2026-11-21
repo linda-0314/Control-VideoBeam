@@ -21,6 +21,10 @@ from prestamos.reglas import (
 
 TOTAL_VIDEOBEAMS = len(VIDEOBEAMS_DE_LA_BIBLIOTECA)
 
+# Máximo de caracteres de quién lo lleva, la clase y el profesor: lo mismo que
+# guarda cada campo en models.py y el maxlength del formulario.
+LONGITUD_MAXIMA_TEXTO = 100
+
 
 @dataclass(frozen=True)
 class Prestamo:
@@ -108,12 +112,21 @@ def registrar_prestamo(
         DatoInvalido: Si quien_lleva, clase o profesor está vacío, tiene solo
             espacios o es None. Mensajes: "Escribe el nombre de quien lleva el
             videobeam", "Falta la clase" o "Falta el nombre del profesor".
+            También si alguno tiene más de 100 caracteres sin contar los
+            espacios de los extremos, por ejemplo "La clase no puede tener
+            más de 100 caracteres".
         VideobeamNoExiste: Si el código no es de la biblioteca.
         VideobeamYaPrestado: Si el videobeam tiene un préstamo abierto.
     """
-    quien_lleva = _texto_obligatorio(quien_lleva, "Escribe el nombre de quien lleva el videobeam")
-    clase = _texto_obligatorio(clase, "Falta la clase")
-    profesor = _texto_obligatorio(profesor, "Falta el nombre del profesor")
+    quien_lleva = _texto_obligatorio(
+        quien_lleva,
+        "Escribe el nombre de quien lleva el videobeam",
+        "El nombre de quien lleva el videobeam",
+    )
+    clase = _texto_obligatorio(clase, "Falta la clase", "La clase")
+    profesor = _texto_obligatorio(
+        profesor, "Falta el nombre del profesor", "El nombre del profesor"
+    )
     prestar_videobeam(codigo, codigos_prestados(prestamos))
     return Prestamo(codigo, quien_lleva, clase, profesor, fecha_hora_salida)
 
@@ -149,11 +162,19 @@ def registrar_devolucion(
     return replace(abierto, fecha_hora_devolucion=fecha_hora)
 
 
-def _texto_obligatorio(valor: str | None, mensaje_si_falta: str) -> str:
-    """Devuelve el texto sin espacios en los extremos, o lanza DatoInvalido si queda vacío."""
+def _texto_obligatorio(valor: str | None, mensaje_si_falta: str, nombre_del_campo: str) -> str:
+    """Devuelve el texto sin espacios en los extremos.
+
+    Lanza DatoInvalido si queda vacío o si pasa de LONGITUD_MAXIMA_TEXTO.
+    """
     if valor is None or not valor.strip():
         raise DatoInvalido(mensaje_si_falta)
-    return valor.strip()
+    texto = valor.strip()
+    if len(texto) > LONGITUD_MAXIMA_TEXTO:
+        raise DatoInvalido(
+            f"{nombre_del_campo} no puede tener más de {LONGITUD_MAXIMA_TEXTO} caracteres"
+        )
+    return texto
 
 
 def _prestamo_abierto(codigo: str, prestamos: Iterable[Prestamo]) -> Prestamo | None:

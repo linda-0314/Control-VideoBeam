@@ -27,9 +27,9 @@ class Prestamo(models.Model):
     """Una fila de la planilla: quién lleva qué videobeam, para qué clase y cuándo."""
 
     videobeam = models.ForeignKey(Videobeam, on_delete=models.PROTECT, related_name="prestamos")
-    quien_lleva = models.CharField(max_length=100)
-    clase = models.CharField(max_length=100)
-    profesor = models.CharField(max_length=100)
+    quien_lleva = models.CharField(max_length=registro.LONGITUD_MAXIMA_TEXTO)
+    clase = models.CharField(max_length=registro.LONGITUD_MAXIMA_TEXTO)
+    profesor = models.CharField(max_length=registro.LONGITUD_MAXIMA_TEXTO)
     fecha_hora_salida = models.DateTimeField()
     fecha_hora_devolucion = models.DateTimeField(null=True, blank=True)
 
