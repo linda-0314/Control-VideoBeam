@@ -1,0 +1,80 @@
+{% extends "prestamos/base.html" %}
+
+{% block contenido %}
+  {% for mensaje in messages %}
+    <div class="aviso exito" role="status">{{ mensaje }}</div>
+  {% endfor %}
+  {% if error %}
+    <div class="aviso error" role="alert">{{ error }}</div>
+  {% endif %}
+
+  <section class="tarjeta">
+    {# HU-01 #}
+    <p class="disponibilidad{% if not disponibles %} sin-disponibles{% endif %}">{{ mensaje_disponibilidad }}</p>
+    <table>
+      <thead>
+        <tr><th>Videobeam</th><th>Estado</th><th>Quién lo lleva</th><th>Clase</th><th>Profesor</th><th>Salida</th></tr>
+      </thead>
+      <tbody>
+        {% for codigo, prestamo in videobeams %}
+          <tr>
+            <td>{{ codigo }}</td>
+            {% if prestamo %}
+              <td class="estado-prestado">Prestado</td>
+              <td>{{ prestamo.quien_lleva }}</td>
+              <td>{{ prestamo.clase }}</td>
+              <td>{{ prestamo.profesor }}</td>
+              <td>{{ prestamo.fecha_hora_salida|date:"d/m/Y g:i a" }}</td>
+            {% else %}
+              <td class="estado-libre">Disponible</td>
+              <td></td><td></td><td></td><td></td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <div class="columnas">
+    <section class="tarjeta">
+      {# HU-02 y HU-08 #}
+      <h2>Registrar préstamo</h2>
+      <form method="post" action="{% url 'crear_prestamo' %}">
+        {% csrf_token %}
+        <label for="codigo">Videobeam</label>
+        <select id="codigo" name="codigo" required>
+          {% for codigo in disponibles %}
+            <option value="{{ codigo }}" {% if datos.codigo == codigo %}selected{% endif %}>{{ codigo }}</option>
+          {% empty %}
+            <option value="">No hay videobeams disponibles</option>
+          {% endfor %}
+        </select>
+        <label for="quien_lleva">Quién lo lleva</label>
+        <input id="quien_lleva" name="quien_lleva" maxlength="100" value="{{ datos.quien_lleva }}">
+        <label for="clase">Clase</label>
+        <input id="clase" name="clase" maxlength="100" value="{{ datos.clase }}">
+        <label for="profesor">Profesor</label>
+        <input id="profesor" name="profesor" maxlength="100" value="{{ datos.profesor }}">
+        <button class="principal" type="submit" {% if not disponibles %}disabled{% endif %}>Registrar préstamo</button>
+      </form>
+    </section>
+
+    <section class="tarjeta">
+      {# HU-04 #}
+      <h2>Registrar devolución</h2>
+      <form method="post" action="{% url 'registrar_devolucion' %}">
+        {% csrf_token %}
+        <label for="codigo_devolucion">Videobeam</label>
+        <select id="codigo_devolucion" name="codigo" required>
+          {% for codigo in prestados %}
+            <option value="{{ codigo }}">{{ codigo }}</option>
+          {% empty %}
+            <option value="">No hay videobeams prestados</option>
+          {% endfor %}
+        </select>
+        <p class="nota">Se guarda la fecha y la hora en que registras la devolución.</p>
+        <button class="principal" type="submit" {% if not prestados %}disabled{% endif %}>Registrar devolución</button>
+      </form>
+    </section>
+  </div>
+{% endblock %}

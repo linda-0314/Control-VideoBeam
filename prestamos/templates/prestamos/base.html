@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Control VideoBeam FET{% endblock %}</title>
+  <style>
+    :root { --verde: #1b6b35; --verde-claro: #e8f3ec; --rojo: #b3261e; --rojo-claro: #fdecea; --gris: #5f6368; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; font-size: 16px; color: #202124; background: #f6f7f6; }
+    header { background: var(--verde); color: #fff; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { font-size: 20px; margin: 0; }
+    header form { margin: 0; }
+    header button { background: transparent; color: #fff; border: 1px solid #fff; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+    main { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+    .tarjeta { background: #fff; border: 1px solid #dadce0; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+    .disponibilidad { font-size: 28px; font-weight: bold; color: var(--verde); }
+    .disponibilidad.sin-disponibles { color: var(--rojo); }
+    .aviso { border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; }
+    .aviso.exito { background: var(--verde-claro); color: var(--verde); }
+    .aviso.error { background: var(--rojo-claro); color: var(--rojo); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; }
+    .estado-libre { color: var(--verde); font-weight: bold; }
+    .estado-prestado { color: var(--rojo); font-weight: bold; }
+    .columnas { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 720px) { .columnas { grid-template-columns: 1fr; } }
+    label { display: block; margin: 10px 0 4px; font-weight: bold; }
+    input, select { width: 100%; padding: 8px; border: 1px solid #bdc1c6; border-radius: 6px; font-size: 16px; }
+    button.principal { margin-top: 14px; width: 100%; background: var(--verde); color: #fff; border: 0; border-radius: 6px; padding: 10px; font-size: 16px; cursor: pointer; }
+    button.principal:disabled { background: #bdc1c6; cursor: not-allowed; }
+    .nota { color: var(--gris); font-size: 14px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Control VideoBeam FET</h1>
+    {% if user.is_authenticated %}
+      <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit">Cerrar sesión ({{ user.username }})</button>
+      </form>
+    {% endif %}
+  </header>
+  <main>
+    {% block contenido %}{% endblock %}
+  </main>
+</body>
+</html>
