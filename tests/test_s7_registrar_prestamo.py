@@ -105,13 +105,28 @@ def test_texto_vacio_en_cada_campo(campo, mensaje, vacio):
         ("Íñigo Peña", "Íñigo Peña"),  # P3: tilde y ñ
         ("Ana D'Ángelo", "Ana D'Ángelo"),  # P3: apóstrofo
         ("A", "A"),  # límite inferior: 1 carácter, primero válido
-        ("x" * 100, "x" * 100),  # límite superior: 100 caracteres, último válido
-        (" " + "x" * 100 + " ", "x" * 100),  # 102 con espacios: cuenta sin los extremos
+        pytest.param("x" * 100, "x" * 100, id="100-caracteres"),  # límite superior: último válido
+        pytest.param(
+            " " + "x" * 100 + " ", "x" * 100, id="100-mas-espacios"
+        ),  # 102 con espacios: cuenta sin los extremos
     ],
 )
 def test_textos_validos_de_quien_lleva(entrada, guardado):
     prestamo = registrar_prestamo("VB-02", [], entrada, "Redes", "Andrés Ruiz", SALIDA)
     assert prestamo.quien_lleva == guardado
+
+
+@pytest.mark.parametrize("campo", ["quien_lleva", "clase", "profesor"])
+def test_espacios_en_los_extremos_se_quitan_en_cada_campo(campo):
+    # P2 en los tres campos. Agregada en el paso 5: el error E5 (guardar la clase
+    # sin quitar los espacios) no lo detectaba ninguna prueba.
+    datos = {"quien_lleva": "Laura Gómez", "clase": "Redes", "profesor": "Andrés Ruiz"}
+    esperado = Prestamo("VB-02", "Laura Gómez", "Redes", "Andrés Ruiz", SALIDA)
+    datos[campo] = f"  {datos[campo]}  "
+    prestamo = registrar_prestamo(
+        "VB-02", [], datos["quien_lleva"], datos["clase"], datos["profesor"], SALIDA
+    )
+    assert prestamo == esperado
 
 
 @pytest.mark.parametrize(
