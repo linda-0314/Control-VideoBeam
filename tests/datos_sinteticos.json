@@ -1,0 +1,77 @@
+{
+  "origen": "Generados con IA (Claude) el 21 de noviembre de 2026 para Control VideoBeam FET. Nombres inventados con apellidos comunes del Huila; no corresponden a personas reales. El proyecto no guarda teléfonos ni documentos, así que no se generaron.",
+  "validos": [
+    {
+      "caso": "tildes en nombre y clase",
+      "codigo": "VB-01",
+      "quien_lleva": "José Ángel Muñoz Perdomo",
+      "clase": "Cálculo diferencial",
+      "profesor": "Martha Lucía Cuéllar"
+    },
+    {
+      "caso": "ñ y diéresis",
+      "codigo": "VB-02",
+      "quien_lleva": "Begoña Núñez Güiza",
+      "clase": "Programación orientada a objetos",
+      "profesor": "Hernán Darío Vargas"
+    },
+    {
+      "caso": "apóstrofo y guion",
+      "codigo": "VB-03",
+      "quien_lleva": "Ana D'Ángelo Rojas",
+      "clase": "Inglés III",
+      "profesor": "María-José Polanía"
+    },
+    {
+      "caso": "espacios en los extremos y nombre de una letra",
+      "codigo": "VB-04",
+      "quien_lleva": "  Yesenia Cabrera Losada  ",
+      "clase": " Ética profesional ",
+      "profesor": "Ñ"
+    },
+    {
+      "caso": "el texto 0 y 100 eñes (200 bytes)",
+      "codigo": "VB-05",
+      "quien_lleva": "ññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññ",
+      "clase": "0",
+      "profesor": "Óscar Iván Tovar"
+    }
+  ],
+  "invalidos": [
+    {
+      "caso": "quién lo lleva vacío",
+      "quien_lleva": "",
+      "clase": "Bases de datos",
+      "profesor": "Martha Lucía Cuéllar",
+      "mensaje": "Escribe el nombre de quien lleva el videobeam"
+    },
+    {
+      "caso": "quién lo lleva solo con espacios",
+      "quien_lleva": "     ",
+      "clase": "Bases de datos",
+      "profesor": "Martha Lucía Cuéllar",
+      "mensaje": "Escribe el nombre de quien lleva el videobeam"
+    },
+    {
+      "caso": "clase vacía",
+      "quien_lleva": "Íñigo Peña Ramírez",
+      "clase": "",
+      "profesor": "Hernán Darío Vargas",
+      "mensaje": "Falta la clase"
+    },
+    {
+      "caso": "profesor solo con un tabulador y espacios",
+      "quien_lleva": "Íñigo Peña Ramírez",
+      "clase": "Redes y telecomunicaciones",
+      "profesor": " \t ",
+      "mensaje": "Falta el nombre del profesor"
+    },
+    {
+      "caso": "101 eñes en quien lo lleva",
+      "quien_lleva": "ñññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññ",
+      "clase": "Redes y telecomunicaciones",
+      "profesor": "Hernán Darío Vargas",
+      "mensaje": "El nombre de quien lleva el videobeam no puede tener más de 100 caracteres"
+    }
+  ]
+}

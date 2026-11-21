@@ -6,8 +6,10 @@ sola vez y cada prueba con el fixture `db` corre dentro de una transacción
 que se deshace al terminar, así ninguna prueba deja datos para la siguiente.
 """
 
+import json
 import os
 from datetime import datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import django
@@ -86,3 +88,17 @@ def cliente(bibliotecario) -> Client:
     navegador = Client()
     navegador.force_login(bibliotecario)
     return navegador
+
+
+# ----- Datos sintéticos (semana 7) -----
+
+
+@pytest.fixture
+def datos_sinteticos() -> dict:
+    """Préstamos inventados con casos difíciles, de tests/datos_sinteticos.json.
+
+    Tienen tildes, ñ, diéresis, apóstrofo, guion, espacios, el texto "0" y
+    textos de 100 y 101 eñes. Ningún dato es de una persona real.
+    """
+    ruta = Path(__file__).parent / "datos_sinteticos.json"
+    return json.loads(ruta.read_text(encoding="utf-8"))
