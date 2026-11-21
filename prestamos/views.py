@@ -75,26 +75,26 @@ def registrar_devolucion(request: HttpRequest) -> HttpResponse:
     return redirect("inicio")
 
 
+def _abiertos_por_codigo() -> dict[str, Prestamo]:
+    """Los préstamos sin devolución guardados, por código de videobeam."""
+    abiertos = Prestamo.objects.filter(fecha_hora_devolucion__isnull=True)
+    return {p.videobeam.codigo: p for p in abiertos.select_related("videobeam")}
+
+
 def _prestamos_abiertos() -> list[registro.Prestamo]:
     """Los préstamos sin devolución, en el formato de las reglas."""
-    abiertos = Prestamo.objects.filter(fecha_hora_devolucion__isnull=True)
-    return [p.a_registro() for p in abiertos.select_related("videobeam")]
+    return [p.a_registro() for p in _abiertos_por_codigo().values()]
 
 
 def _pagina_inicio(
     request: HttpRequest, error: ErrorDePrestamo | None = None, datos: dict | None = None
 ) -> HttpResponse:
     """Arma la página de inicio; con un error, responde con su estado_http."""
-    abiertos = {
-        p.videobeam.codigo: p
-        for p in Prestamo.objects.filter(fecha_hora_devolucion__isnull=True).select_related(
-            "videobeam"
-        )
-    }
+    abiertos = _abiertos_por_codigo()
     videobeams = [(v.codigo, abiertos.get(v.codigo)) for v in Videobeam.objects.all()]
     contexto = {
         "mensaje_disponibilidad": registro.mensaje_disponibilidad(
-            [p.a_registro() for p in abiertos.values()]
+            p.a_registro() for p in abiertos.values()
         ),
         "videobeams": videobeams,
         "disponibles": [codigo for codigo, prestamo in videobeams if prestamo is None],
