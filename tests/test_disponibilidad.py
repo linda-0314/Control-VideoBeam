@@ -3,7 +3,8 @@
 from dataclasses import replace
 from datetime import datetime
 
-from conftest import prestamo_abierto
+from conftest import BOGOTA, prestamo_abierto
+
 from prestamos.registro import codigos_prestados, mensaje_disponibilidad
 
 # ----- Casos normales -----
@@ -31,9 +32,8 @@ def test_con_cuatro_prestados_queda_uno_disponible():
 
 
 def test_un_prestamo_devuelto_no_cuenta_como_prestado():
-    devuelto = replace(
-        prestamo_abierto("VB-01"), fecha_hora_devolucion=datetime(2026, 11, 14, 21, 30)
-    )
+    devolucion = datetime(2026, 11, 14, 21, 30, tzinfo=BOGOTA)
+    devuelto = replace(prestamo_abierto("VB-01"), fecha_hora_devolucion=devolucion)
     assert codigos_prestados([devuelto]) == frozenset()
     assert mensaje_disponibilidad([devuelto]) == "5 de 5 videobeams disponibles"
 

@@ -8,7 +8,6 @@ from prestamos.reglas import (
     prestar_videobeam,
 )
 
-
 # ----- Casos normales -----
 
 def test_prestar_uno_disponible_lo_agrega_a_los_prestados():

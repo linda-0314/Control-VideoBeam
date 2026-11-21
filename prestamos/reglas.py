@@ -6,7 +6,7 @@ responden con el `estado_http` del error que se lance: 400 DatoInvalido,
 (documento de diseño, sección 6).
 """
 
-from collections.abc import Set
+from collections.abc import Set as AbstractSet
 
 # Los 5 videobeams de la biblioteca de la FET (requisitos de la semana 3).
 VIDEOBEAMS_DE_LA_BIBLIOTECA = frozenset({"VB-01", "VB-02", "VB-03", "VB-04", "VB-05"})
@@ -45,7 +45,7 @@ class VideobeamYaPrestado(ErrorDePrestamo):
     estado_http = 409
 
 
-def prestar_videobeam(codigo: str, prestados: Set[str]) -> frozenset[str]:
+def prestar_videobeam(codigo: str, prestados: AbstractSet[str]) -> frozenset[str]:
     """Marca un videobeam como prestado si existe y está libre (HU-08).
 
     Args:

@@ -4,12 +4,12 @@ from dataclasses import replace
 from datetime import datetime
 
 import pytest
+from conftest import BOGOTA, SALIDA, prestamo_abierto
 
-from conftest import SALIDA, prestamo_abierto
 from prestamos.registro import codigos_prestados, mensaje_disponibilidad, registrar_devolucion
 from prestamos.reglas import DatoInvalido, VideobeamNoExiste, VideobeamNoPrestado
 
-DEVOLUCION = datetime(2026, 11, 14, 21, 30)
+DEVOLUCION = datetime(2026, 11, 14, 21, 30, tzinfo=BOGOTA)
 
 # ----- Casos normales -----
 
@@ -25,7 +25,8 @@ def test_devolucion_normal_guarda_la_hora_y_deja_el_videobeam_disponible():
 
 
 def test_devuelve_el_prestamo_abierto_aunque_haya_prestamos_viejos_del_mismo_videobeam():
-    viejo = replace(prestamo_abierto("VB-02"), fecha_hora_devolucion=datetime(2026, 11, 13, 21, 0))
+    ayer = datetime(2026, 11, 13, 21, 0, tzinfo=BOGOTA)
+    viejo = replace(prestamo_abierto("VB-02"), fecha_hora_devolucion=ayer)
     abierto = prestamo_abierto("VB-02")
     devuelto = registrar_devolucion("VB-02", [viejo, abierto], DEVOLUCION)
     assert devuelto.fecha_hora_salida == SALIDA
@@ -48,7 +49,7 @@ def test_se_puede_devolver_en_el_mismo_minuto_de_la_salida():
 
 def test_se_puede_devolver_al_dia_siguiente():
     # HU-06: si no se devolvió en la jornada, igual se debe poder registrar después.
-    al_dia_siguiente = datetime(2026, 11, 15, 7, 15)
+    al_dia_siguiente = datetime(2026, 11, 15, 7, 15, tzinfo=BOGOTA)
     devuelto = registrar_devolucion("VB-02", [prestamo_abierto("VB-02")], al_dia_siguiente)
     assert devuelto.fecha_hora_devolucion == al_dia_siguiente
 
@@ -75,7 +76,7 @@ def test_devolver_un_codigo_que_no_existe():
 
 
 def test_la_devolucion_no_puede_ser_anterior_a_la_salida():
-    antes = datetime(2026, 11, 14, 18, 0)
+    antes = datetime(2026, 11, 14, 18, 0, tzinfo=BOGOTA)
     with pytest.raises(
         DatoInvalido, match="La hora de devolución no puede ser anterior a la de salida"
     ):

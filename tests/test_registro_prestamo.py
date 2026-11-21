@@ -1,8 +1,8 @@
 """Pruebas de HU-02: registrar préstamo."""
 
 import pytest
-
 from conftest import SALIDA
+
 from prestamos.registro import Prestamo, mensaje_disponibilidad, registrar_prestamo
 from prestamos.reglas import DatoInvalido, VideobeamNoExiste, VideobeamYaPrestado
 
