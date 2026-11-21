@@ -170,3 +170,88 @@ Para comprobar que el «—» es correcto, la suite tiene casos donde fallan var
 |---|---|
 | ¿Se puede devolver a la misma hora de la salida? | Sí: «anterior» no incluye la misma hora. |
 | ¿Hay un tiempo máximo para devolver? | No en esta versión: HU-06 (pendientes de la jornada) lo marcará como no devuelto, pero se puede registrar. |
+
+## 2. Pruebas de la IA corregidas o descartadas
+
+**Cómo se generaron.** Le di a la IA las reglas y las tablas de la sección 1 con este prompt: «Actúa como desarrollador de pruebas en Python. Contexto: proyecto Control VideoBeam FET; te paso las reglas (historias de usuario) y la tabla de casos de 4 funciones: mensaje_disponibilidad, prestar_videobeam, registrar_prestamo (con su tabla de decisión) y registrar_devolucion. Tarea: escribe las pruebas con pytest a partir de la regla y la tabla, no del código. Formato: @pytest.mark.parametrize con un comentario por fila que diga la partición o el límite, pytest.raises con el tipo de error exacto, pytest.approx si hay decimales, y esperados fijos. Restricciones: no modifiques el código de prestamos/; si un esperado no sale de la regla, dímelo.»
+
+La IA entregó 53 pruebas en 4 archivos `tests/test_s7_*.py` (commit 801a3c5, guardado sin revisar). Al ejecutarlas, 52 pasaron y 1 falló. Después revisé cada prueba con las tres preguntas: **(1)** ¿el esperado sale de la regla?, **(2)** ¿fallaría si rompo el código?, **(3)** ¿cubre algo que otra prueba no cubre?
+
+**Prueba que falló: defecto real en el código**
+
+| Id | Prueba | Qué pasó | Qué hice |
+|---|---|---|---|
+| D-01 | `test_texto_de_101_caracteres` | El esperado sale de la tabla (101 caracteres es el primer valor inválido). El código aceptaba 101 caracteres, y la aplicación web los guardaba completos porque SQLite no hace cumplir el `max_length` (lo comprobé: `POST /prestamos/` respondió 302 y guardó 101 caracteres). | Corregí el código, no la prueba: `_texto_obligatorio` revisa `LONGITUD_MAXIMA_TEXTO = 100` (commit 7df8939). Después fortalecí la prueba con el mensaje exacto en los tres campos. |
+
+**Pruebas corregidas o descartadas**
+
+| # | Archivo | Prueba de la IA | Pregunta que falló | Decisión | Razón | Qué hice en su lugar |
+|---|---|---|---|---|---|---|
+| 1 | disponibilidad | fila `(2, "3 de 5 …")` | 3 | Descartada | Es otro valor intermedio de P1; ya están el escenario 1 (3 prestados) y los límites 0, 1 y 4. | Nada: P1 sigue cubierta. |
+| 2 | disponibilidad | `test_mensaje_devuelve_texto` | 2 y 3 | Descartada | Solo comprueba que el resultado sea `str`. Un mensaje equivocado también es `str`. | Nada: la fila parametrizada ya compara el texto exacto. |
+| 3 | disponibilidad | `test_prestamos_devueltos_no_cuentan` | 2 | Corregida | Con un solo préstamo devuelto no comprueba la mezcla de abiertos y cerrados. | `test_los_prestamos_devueltos_no_cuentan` con 3 filas: uno devuelto, 2 abiertos más 3 cerrados, y los 5 abiertos más 2 viejos. |
+| 4 | disponibilidad | `test_codigos_prestados_con_tres` | 2 y 3 | Descartada | `len(...) == 3` pasa aunque devuelva otros códigos; además `codigos_prestados` no es una de las 4 funciones y ya la prueba `test_disponibilidad.py`. | Nada. |
+| 5 | disponibilidad | (faltaba) | — | Agregada | La IA no probó la partición P4 de la tabla (dos registros abiertos del mismo videobeam). | `test_dos_registros_abiertos_del_mismo_videobeam_cuentan_una_vez`. |
+| 6 | prestar | `test_prestar_codigo_que_no_existe` (8 filas) | 2 | Corregida | Usaba `pytest.raises(Exception)`: pasa con cualquier error. Lo comprobé: si el código lanza `VideobeamYaPrestado` en lugar de `VideobeamNoExiste`, las 8 filas siguen pasando. | `pytest.raises(VideobeamNoExiste, match="^El VB-00 no existe$")` con el mensaje exacto en cada fila. |
+| 7 | prestar | `test_prestar_uno_ya_prestado` y `test_prestar_con_los_cinco_prestados` | 1 | Corregidas y unidas | No comprobaban el mensaje «El VB-01 ya está prestado», que está literal en HU-08. | Una prueba parametrizada con `match` del mensaje exacto. |
+| 8 | prestar | `test_mensaje_codigo_inexistente` | 2 y 3 | Descartada | `"no existe" in str(...)` es débil y queda repetida con la corrección 6. | Nada: la fila `VB-09` de la 6 la cubre. |
+| 9 | registrar_prestamo | `test_r6_prestamo_valido` | 2 | Corregida | Solo revisaba `is not None` y el código. Lo comprobé: si el código guarda la clase en el profesor y al revés, la prueba seguía pasando. | Compara el `Prestamo` completo con los datos de HU-02, escenario 1. |
+| 10 | registrar_prestamo | `test_textos_vacios_en_profesor` | 3 | Descartada | Igual a `test_textos_vacios_en_profesor_otra_vez`, pero sin el mensaje. | Nada. |
+| 11 | registrar_prestamo | `test_textos_vacios_en_profesor_otra_vez` | 3 | Corregida | Solo probaba el profesor; quién lo lleva y la clase solo tenían el caso `""`. | `test_texto_vacio_en_cada_campo`: 3 campos × 3 vacíos (`""`, `"   "`, `None`) con su mensaje. |
+| 12 | registrar_prestamo | (faltaba) | — | Agregada | La tabla de decisión simplificada usa «—», pero la IA no probó combinaciones con varias condiciones falsas. | `test_si_fallan_varias_condiciones_gana_la_primera` (4 filas) y `test_si_c4_y_c5_fallan_gana_que_no_existe`. |
+| 13 | registrar_prestamo | (faltaba) | — | Agregada | El límite de 100 caracteres cuenta sin los espacios de los extremos; la IA no lo probó. | Fila `100-mas-espacios`: 102 caracteres con espacios se aceptan y se guardan 100. |
+| 14 | devolucion | `test_devoluciones_validas` | 2 | Corregida | Solo comparaba la hora de devolución. Lo comprobé: si al devolver se borra quién lo llevó, las 5 filas seguían pasando. | Compara el préstamo completo: `replace(ABIERTO_VB02, fecha_hora_devolucion=…)`. |
+| 15 | devolucion | fila `SALIDA + 1 minuto` | 3 | Descartada | El límite es la misma hora (primer valor válido); un minuto después es otro valor de la misma partición. | Nada. |
+| 16 | devolucion | `test_devolucion_un_minuto_antes_de_la_salida` | 1 | Corregida | No comprobaba el mensaje de la regla. Lo comprobé: con otro mensaje seguía pasando. | `match` con el mensaje exacto. |
+| 17 | devolucion | `test_devoluciones_invalidas` | 1 y 3 | Corregida | Sin mensajes, y faltaban P3 (ya devuelto) y P6 (préstamos viejos del mismo videobeam). La fila «VB-02 sin préstamos» repetía P2. | Mensajes exactos, fila de P3 en lugar de la repetida y `test_con_prestamos_viejos_cierra_el_abierto` para P6. |
+| 18 | devolucion | `test_no_modifica_el_prestamo_original` | 2 | Descartada | `Prestamo` es un `dataclass(frozen=True)`: Python no deja modificarlo, así que la prueba no puede fallar nunca. | Nada: la protección la da `frozen=True`. |
+
+**Comprobación de la revisión.** Con 4 errores a propósito, la versión de la IA sin revisar dejó pasar 3 y la revisada los detectó todos:
+
+| Error introducido | Versión de la IA (sin revisar) | Versión revisada |
+|---|---|---|
+| Guardar la clase en el profesor y al revés | 19 pasan | 1 falla |
+| Un código que no existe lanza `VideobeamYaPrestado` | 1 falla (solo `test_mensaje_codigo_inexistente`) | 8 fallan |
+| Cambiar el mensaje de la hora anterior a la salida | 10 pasan | 1 falla |
+| Al devolver, borrar quién lo llevó | 10 pasan | 5 fallan |
+
+Ninguna prueba se ajustó para que pasara: las 62 pruebas revisadas pasaron sin cambiar el código, salvo la corrección del defecto D-01.
+
+## 3. Romper el código a propósito
+
+Cada error se introdujo solo, se ejecutó toda la suite (`pytest`, 125 pruebas en ese momento) y se deshizo con `git restore` antes del siguiente.
+
+| # | Error introducido | Archivo | Pruebas que fallaron | Resultado |
+|---|---|---|---|---|
+| E1 | `<` por `<=` en la hora de devolución: no deja devolver a la misma hora | `registro.py` | `test_devolucion_valida_cierra_el_mismo_prestamo[devolucion0]` y `test_se_puede_devolver_en_el_mismo_minuto_de_la_salida` | Detectado (límite) |
+| E2 | Borde de «ninguno libre»: `libres == 0` por `libres <= 1` | `registro.py` | `test_mensaje_segun_cantidad_de_prestados[4-1 de 5 …]` y `test_con_cuatro_prestados_queda_uno_disponible` | Detectado (límite) |
+| E3 | `prestar_videobeam` devuelve siempre los mismos prestados, sin agregar el código | `reglas.py` | 10: las 4 filas de `test_prestar_un_videobeam_libre` y 6 de `test_reglas.py` | Detectado |
+| E4 | `>` por `>=` en la longitud máxima: rechaza 100 caracteres | `registro.py` | `test_textos_validos_de_quien_lleva[100-caracteres]` y `[100-mas-espacios]` | Detectado (límite) |
+| E5 | La clase se valida pero se guarda sin quitar los espacios | `registro.py` | **Ninguna** (125 pasaron) | **No detectado:** P2 solo se probaba con quién lo lleva. Agregué `test_espacios_en_los_extremos_se_quitan_en_cada_campo` (commit 7e81012). Al repetir E5, falla `[clase]`. |
+| E6 | Lo mismo con el profesor | `registro.py` | Solo `test_quita_los_espacios_alrededor_de_los_nombres` (de la semana 5) | Detectado, pero no por la suite de la semana 7. Con la prueba nueva también falla `[profesor]`. |
+| E7 | `codigos_prestados` cuenta también los préstamos devueltos | `registro.py` | 4: 2 filas de `test_los_prestamos_devueltos_no_cuentan` y 2 de semanas anteriores | Detectado |
+| E8 | Quitar `@login_required` de la vista `crear_prestamo` | `views.py` | `test_abuso_sin_sesion_no_se_puede_registrar_un_prestamo` | Detectado (control de acceso) |
+
+## 4. Datos de prueba sintéticos
+
+| Aspecto | Detalle |
+|---|---|
+| Origen | Generados con IA (Claude) el 21 de noviembre de 2026, con el prompt: «Genera datos de prueba para préstamos de videobeams de la biblioteca de la FET en Neiva: nombres inventados con apellidos comunes del Huila, materias de la universidad y profesores ficticios. Sin personas reales. Incluye casos difíciles: tildes, ñ, diéresis, apóstrofo, guion, texto vacío, solo espacios, el texto 0 y textos en el límite de 100 caracteres.» Revisé que ningún nombre fuera de alguien que conozco o de una persona pública. |
+| Archivo y fixture | `tests/datos_sinteticos.json` y el fixture `datos_sinteticos` de `tests/conftest.py` |
+| Contexto local | Materias de la FET (Cálculo diferencial, Programación orientada a objetos, Inglés III, Ética profesional, Redes y telecomunicaciones) y apellidos comunes del Huila (Perdomo, Cuéllar, Polanía, Losada, Tovar) |
+| Casos difíciles | Tildes («José Ángel Muñoz Perdomo»), ñ y diéresis («Begoña Núñez Güiza»), apóstrofo («Ana D'Ángelo Rojas»), guion («María-José Polanía»), espacios en los extremos, nombre de una letra («Ñ»), el texto «0» como clase, 100 eñes (200 bytes: comprueba que se cuentan caracteres y no bytes), 101 eñes, texto vacío, solo espacios y un tabulador |
+| Datos que no se generaron | Teléfonos y documentos: el sistema no los guarda (solo quién lo lleva, clase y profesor) |
+| Dónde se usan | `tests/test_s7_datos_sinteticos.py`: los 5 válidos y los 5 inválidos contra `registrar_prestamo`, y los 5 válidos por la aplicación web (se guardan en SQLite y se muestran con sus caracteres) |
+
+## Resumen
+
+| Concepto | Valor |
+|---|---|
+| Funciones probadas | 4 (una con tabla de decisión de 5 condiciones) |
+| Pruebas de la semana 7 | 69 en `tests/test_s7_*.py` |
+| Pruebas totales del proyecto | 132, todas pasan con `pytest -v` |
+| Pruebas de la IA descartadas | 8 |
+| Pruebas de la IA corregidas | 8 |
+| Casos agregados que la IA no hizo | 6 grupos, más 1 caso agregado en el paso 5 (E5) |
+| Defectos reales encontrados | 1 (D-01, textos de más de 100 caracteres), corregido en el código |
+| Errores introducidos a propósito | 8; 1 no detectado (E5), con su caso agregado |

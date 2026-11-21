@@ -83,7 +83,13 @@ La planilla completa, con los préstamos ya devueltos, se consulta en http://127
 pytest
 ```
 
-Ejecuta las 63 pruebas de `tests/`: las reglas de HU-01, HU-02, HU-04 y HU-08 (43 pruebas) y la aplicación web (20 pruebas: páginas, inicio de sesión, control de acceso, abuso con códigos manipulados y HTML, contraseña con scrypt y RNF-01). Las pruebas web crean una base de datos en memoria, así que no tocan `db.sqlite3`.
+Ejecuta las 132 pruebas de `tests/` (con `pytest -v` se ve cada una):
+
+- Reglas de HU-01, HU-02, HU-04 y HU-08 de las semanas 5 y 6 (43 pruebas).
+- Aplicación web (20 pruebas: páginas, inicio de sesión, control de acceso, abuso con códigos manipulados y HTML, contraseña con scrypt y RNF-01).
+- Suite de la semana 7 (69 pruebas en `tests/test_s7_*.py`), diseñada con particiones de equivalencia, valores límite y una tabla de decisión, y con datos sintéticos. El diseño de los casos, la revisión de las pruebas generadas por la IA y los errores introducidos a propósito están en [registro_pruebas.md](registro_pruebas.md).
+
+Las pruebas web crean una base de datos en memoria, así que no tocan `db.sqlite3`.
 
 Linter con reglas de estilo, errores, errores probables y seguridad (configurado en `pyproject.toml`):
 
@@ -144,12 +150,15 @@ Control-VideoBeam/
 │   ├── test_disponibilidad.py    # HU-01 (6 pruebas)
 │   ├── test_registro_prestamo.py # HU-02 (11 pruebas)
 │   ├── test_devolucion.py  # HU-04 (9 pruebas)
-│   └── test_web.py         # aplicación web (20 pruebas)
+│   ├── test_web.py         # aplicación web (20 pruebas)
+│   ├── test_s7_*.py        # semana 7: tablas de casos de 4 funciones (69 pruebas)
+│   └── datos_sinteticos.json    # datos de prueba inventados (fixture datos_sinteticos)
 ├── manage.py               # comandos de Django
 ├── .env.example            # plantilla de variables de entorno (sin valores reales)
 ├── .gitignore              # ignora .env, cachés y db.sqlite3
 ├── bitacora_ia.md          # bitácora de uso de IA
 ├── pyproject.toml          # configuración de ruff y pytest
+├── registro_pruebas.md     # reglas, tablas de casos y revisión de las pruebas (semana 7)
 ├── requirements.txt        # dependencias con versión fijada
 ├── revision_seguridad.md   # informe de revisión de código y seguridad
 └── README.md
@@ -164,6 +173,7 @@ Usé Claude (claude.ai) como asistente durante todo el proyecto:
 - Semana 5: para convertir la HU-08 en contrato y pruebas, con el ciclo rojo, verde y refactor.
 - Semana 6: para la segunda revisión de código y seguridad, y como agente de código en la rama `agente/refactor-errores`. Revisé su diff antes de integrarlo.
 - Después de la semana 6: para escribir con pruebas primero las reglas de HU-01, HU-02 y HU-04, y después la aplicación de Django (modelos, vistas, pantallas e inicio de sesión) de las cuatro historias Must.
+- Semana 7: para proponer los casos de prueba, escribir la suite a partir de mis tablas y generar los datos sintéticos. Revisé cada prueba con las tres preguntas; descarté 8, corregí 8 y una de ellas encontró un defecto real que corregí en el código.
 
 Cada sugerencia la verifiqué contra el diseño, las pruebas y el linter. Rechacé las que contradecían el ADR-001 o eran falsos positivos. El detalle está en [bitacora_ia.md](bitacora_ia.md) y los hallazgos en [revision_seguridad.md](revision_seguridad.md).
 

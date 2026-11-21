@@ -10,6 +10,7 @@ Asistente: Claude (claude.ai), con acceso a un entorno para crear archivos, ejec
 
 - **Fecha:** 7 de noviembre de 2026
 - **Sugerencia o prompt:** Le pasé al asistente el enunciado de la tarea de la semana 5 y mi documento de diseño de la semana 4. Me propuso trabajar la HU-08 «No prestar uno ya prestado» como primera funcionalidad.
+- **Prompt mejorado (cómo lo pediría la próxima vez):** «Actúa como analista de requisitos con experiencia en desarrollo guiado por pruebas. Contexto: proyecto Control VideoBeam FET (Django y SQLite, solo lo usa el bibliotecario); te paso el enunciado de la tarea de la semana 5 y mi documento de diseño con las historias y su prioridad MoSCoW. Tarea: propón cuál historia Must conviene hacer primero como una sola función con su contrato. Formato: tabla historia | por qué sirve | tamaño | escenario de error que se puede probar, y al final tu recomendación. Restricciones: solo historias Must de mi documento; no inventes requisitos; no escribas código todavía.»
 - **Decisión:** Aceptada.
 - **Razón:** Es Must, cabe en una sola función y tiene un escenario de error con un mensaje exacto («El VB-01 ya está prestado») que se puede probar. Además protege lo más importante del sistema: que la disponibilidad sea real (N-01).
 - **Cómo la verifiqué:** Revisé en el documento de requisitos que la HU-08 es Must, y en el diseño que su error corresponde al 409 de `POST /prestamos`.
@@ -18,6 +19,7 @@ Asistente: Claude (claude.ai), con acceso a un entorno para crear archivos, ejec
 
 - **Fecha:** 7 de noviembre de 2026
 - **Sugerencia o prompt:** Le pregunté en qué se iba a desarrollar el proyecto. El asistente respondió que era una página en HTML, CSS y JavaScript que guarda los datos en el navegador (localStorage), sin servidor.
+- **Prompt mejorado (cómo lo pediría la próxima vez):** «Actúa como arquitecto de software. Contexto: te paso mis documentos de la semana 3 (requisitos) y de la semana 4 (diseño con los ADR). Tarea: dime en qué tecnología se desarrolla el proyecto según la decisión vigente. Formato: lenguaje, framework y base de datos, con el ADR del que sale cada uno. Restricciones: si los dos documentos se contradicen, vale el más reciente; si no encuentras la decisión, dímelo en vez de suponerla.»
 - **Decisión:** Rechazada.
 - **Razón:** Esa respuesta venía de la sección 9 del documento de la semana 3, que ya no es la decisión vigente. En el diseño de la semana 4 (ADR-001) elegí una aplicación web monolítica en Python con Django y SQLite. Si la hubiera aceptado, habría programado en otro lenguaje y la tarea no respetaría mi diseño.
 - **Cómo la verifiqué:** Le pasé el documento de diseño de la semana 4 y comparé con el ADR-001. El asistente reconoció el error y la funcionalidad quedó en Python con pytest.
@@ -50,6 +52,7 @@ Asistente: Claude (claude.ai), con acceso a un entorno para crear archivos, ejec
 
 - **Fecha:** 7 de noviembre de 2026
 - **Sugerencia o prompt:** Con las pruebas en verde, le pedí un refactor. Propuso pasar la lista `["VB-01", ..., "VB-05"]`, escrita dentro del `if`, a la constante `VIDEOBEAMS_DE_LA_BIBLIOTECA`, armar los mensajes con f-string y agregar docstrings.
+- **Prompt mejorado (cómo lo pediría la próxima vez):** «Actúa como revisor de código Python. Contexto: `prestamos/reglas.py` con la función `prestar_videobeam`; las 11 pruebas de `tests/test_reglas.py` están en verde. Tarea: propón un refactor que mejore la legibilidad sin cambiar el comportamiento. Formato: lista de cambios con el motivo de cada uno, y después el código. Restricciones: no toques `tests/`; los mensajes de error no pueden cambiar; no agregues funciones nuevas; al terminar, ejecuta `pytest` y muéstrame el resultado.»
 - **Decisión:** Aceptada.
 - **Razón:** La lista era un valor mágico. Con la constante se entiende qué es y hay un solo lugar donde cambiarla si la biblioteca compra otro videobeam. El comportamiento no cambia.
 - **Cómo la verifiqué:** Ejecuté `pytest` después del refactor: «11 passed». Con `git diff` comprobé que la carpeta `tests/` no cambió.
@@ -120,6 +123,7 @@ Asistente: Claude (claude.ai), con acceso a un entorno para crear archivos, ejec
 
 - **Fecha:** 21 de noviembre de 2026
 - **Sugerencia o prompt:** «Revisa el código.» La IA revisó la rama `main` y las reglas de HU-01, HU-02 y HU-04 con todas las reglas de ruff. Encontró que las pruebas usaban fechas sin zona horaria (DTZ001), y que con Django (`USE_TZ = True`) comparar una fecha con zona y otra sin zona en `registrar_devolucion` lanza `TypeError`. También encontró los imports sin ordenar (I001) y el nombre `Set`, que se confunde con `set` (PYI025).
+- **Prompt mejorado (cómo lo pediría la próxima vez):** «Actúa como revisor de código Python con experiencia en Django. Contexto: proyecto Control VideoBeam FET; rama `main` con `prestamos/reglas.py` y los parches de HU-01, HU-02 y HU-04 (`prestamos/registro.py`); el siguiente paso es conectar Django con `USE_TZ = True`. Tarea: revisa corrección, legibilidad y los problemas que aparecerán al conectar Django. Formato: tabla archivo | problema | importancia (alta, media, baja) | corrección sugerida. Restricciones: no cambies el código todavía; separa los problemas seguros de las sospechas; ejecuta `pytest` y `ruff` y dime el resultado.»
 - **Decisión:** Aceptada.
 - **Razón:** El error de las fechas solo habría aparecido al conectar Django, que era lo siguiente que iba a hacer. Las pruebas cambiaron solo en sus datos (fechas con `ZoneInfo("America/Bogota")`), no en lo que comprueban.
 - **Cómo la verifiqué:** `ruff check --select DTZ,I,PYI .` sin avisos y 43 pruebas en verde. Commit «Revisión del 21 de noviembre».
@@ -128,6 +132,7 @@ Asistente: Claude (claude.ai), con acceso a un entorno para crear archivos, ejec
 
 - **Fecha:** 21 de noviembre de 2026
 - **Sugerencia o prompt:** «Hazme la mitad de lo que falta.» Le pedí a la IA el proyecto Django con los modelos, las pantallas de las cuatro historias Must y el inicio de sesión, con pruebas primero, respetando el ADR-001 (Django y SQLite) y el ADR-002 (solo el bibliotecario). Su entorno no podía instalar Django, así que para probar copió el Django 5.2.1 que tengo instalado en mi computador.
+- **Prompt mejorado (cómo lo pediría la próxima vez):** «Actúa como desarrollador Django que trabaja con pruebas primero. Contexto: proyecto Control VideoBeam FET; reglas de HU-01, HU-02, HU-04 y HU-08 en `prestamos/` con 43 pruebas; diseño con ADR-001 (Django y SQLite), ADR-002 (solo el bibliotecario), modelo de datos (sección 5) y API (sección 6). Tarea: crea el proyecto Django, los modelos, el inicio de sesión y las pantallas de las cuatro historias Must. Formato: un commit de pruebas en rojo, uno de implementación en verde y uno de refactor; al terminar, resume archivos, pruebas y resultado de `pytest` y `ruff`. Restricciones: no cambies las reglas de `prestamos/reglas.py` ni `registro.py`; contraseñas con scrypt; `login_required` en todas las vistas; la clave secreta en `.env`; fija la versión de Django; si algo del diseño no se puede cumplir, detente y pregúntame.»
 - **Decisión:** Ajustada.
 - **Razón:** La IA propuso fijar `Django==5.2.18` en `requirements.txt` porque es la última versión 5.2 con parches de seguridad (la 5.2.1 tiene vulnerabilidades corregidas después). Lo acepté, pero las pruebas se ejecutaron con la 5.2.1. Por eso tengo que instalar las dependencias y correr `pytest` y `pip-audit` en mi computador para confirmar.
 - **Cómo la verifiqué:** 20 pruebas web en rojo antes de las vistas y 63 en verde después, sin cambiar ninguna prueba. Además se probó con `runserver`: inicio de sesión, préstamo, «4 de 5 videobeams disponibles», 403 sin token CSRF y contraseña guardada con `scrypt$`.
@@ -148,6 +153,44 @@ Asistente: Claude (claude.ai), con acceso a un entorno para crear archivos, ejec
 - **Razón:** Para las páginas HTML que usa el bibliotecario, mandarlo a iniciar sesión es más útil que una página de error 401. El 401 queda para cuando se haga la API en JSON. Lo anoté en los pendientes de `revision_seguridad.md`.
 - **Cómo la verifiqué:** Las pruebas de abuso comprueban que, sin sesión, `POST /prestamos/` y `POST /devoluciones/` redirigen a `/cuentas/login/` y no guardan nada.
 
+## Entradas de la semana 7 (suite de pruebas y registro)
+
+### Entrada 18
+
+- **Fecha:** 21 de noviembre de 2026
+- **Prompt:** «Actúa como analista de pruebas de software. Contexto: proyecto Control VideoBeam FET; te paso las reglas de 4 funciones tal como están en mis historias de usuario: `mensaje_disponibilidad` (HU-01), `prestar_videobeam` (HU-08), `registrar_prestamo` (HU-02, HU-03 y HU-08) y `registrar_devolucion` (HU-04). Tarea: propón los casos de prueba con particiones de equivalencia (incluidas las inválidas), valores límite (el último valor de una partición y el primero de la siguiente) y, para `registrar_prestamo`, una tabla de decisión con todas sus condiciones, simplificada donde una condición no importe. Formato: una tabla por técnica y por función, con el esperado de cada caso y la frase de la regla de donde sale. Restricciones: los esperados salen de la regla, nunca del código; si la regla no dice algo, márcalo como ambigüedad en vez de decidirlo tú; no agregues reglas que no estén en las historias.»
+- **Resultado:** Propuso las particiones y los límites de las 4 funciones y una tabla de decisión de 5 condiciones (C1 a C5) simplificada a 6 reglas. Señaló tres ambigüedades: el mensaje cuando falta la clase, qué mensaje se muestra si faltan varios datos, y la longitud máxima de los nombres.
+- **Decisión:** Ajustada.
+- **Razón:** Revisé la propuesta con las cinco preguntas. Particiones: faltaba P4 de disponibilidad (dos registros abiertos del mismo videobeam), que la agregué aunque la base lo impide. Límites: agregué los códigos VB-00 y VB-06 a cada lado de VB-01 a VB-05. Origen del esperado: cada caso tiene su historia. Ambigüedades: decidí las tres y quedan anotadas para confirmar. Reglas inventadas: la propuesta incluía aceptar `"vb-02"` convirtiéndolo a mayúsculas; la rechacé, igual que en la entrada 5.
+- **Cómo la verifiqué:** Comparé cada esperado con el texto de las historias del documento de requisitos de la semana 3. Resultado: sección 1 de `registro_pruebas.md` (commit 40960fc).
+
+### Entrada 19
+
+- **Fecha:** 21 de noviembre de 2026
+- **Prompt:** «Actúa como desarrollador de pruebas en Python. Contexto: proyecto Control VideoBeam FET; te paso las reglas y la tabla de casos revisada de 4 funciones (sección 1 de `registro_pruebas.md`). Tarea: escribe las pruebas con pytest a partir de la regla y de la tabla, no del código. Formato: `@pytest.mark.parametrize` con un comentario por fila que diga la partición o el límite; `pytest.raises` con el tipo de error exacto; `pytest.approx` si hay decimales; esperados fijos, nunca calculados. Restricciones: no modifiques el código de `prestamos/`; guarda las pruebas en `tests/test_s7_*.py`; si un esperado no sale de la regla, dímelo en vez de inventarlo.»
+- **Resultado:** 53 pruebas en 4 archivos. Al ejecutarlas, 52 pasaron y 1 falló (`test_texto_de_101_caracteres`).
+- **Decisión:** Ajustada.
+- **Razón:** La prueba que falló mostró un defecto real (D-01): el código aceptaba 101 caracteres y la aplicación web los guardaba. Corregí el código, no la prueba. Después revisé cada prueba con las tres preguntas: descarté 8, corregí 8 y agregué los casos que la IA no hizo (por ejemplo, el «—» de la tabla de decisión). La más débil era `pytest.raises(Exception)`, que pasa con cualquier error.
+- **Cómo la verifiqué:** Rompí el código con 4 errores a propósito. La versión de la IA sin revisar dejó pasar 3 y la revisada los detectó todos (sección 2 de `registro_pruebas.md`). Commits 801a3c5 (sin revisar), 7df8939 (defecto) y 748fe94 (revisión).
+
+### Entrada 20
+
+- **Fecha:** 21 de noviembre de 2026
+- **Prompt:** «Actúa como probador de software. Contexto: tengo 125 pruebas en verde de `prestamos/registro.py`, `prestamos/reglas.py` y `prestamos/views.py`. Tarea: propón errores pequeños y realistas para meter en el código uno a la vez (cambiar un `<` por `<=`, un borde, un valor que siempre se devuelve igual, quitar una protección) y dime cuál prueba debería fallar con cada uno. Formato: tabla error | archivo y línea | prueba que debería fallar. Restricciones: no cambies ninguna prueba; yo ejecuto `pytest` después de cada error y lo deshago con `git restore`.»
+- **Resultado:** Propuso 8 errores (E1 a E8). Al ejecutarlos uno a uno, 7 hicieron fallar al menos una prueba, pero el E5 (guardar la clase sin quitar los espacios) pasó las 125 pruebas.
+- **Decisión:** Aceptada, con un caso agregado.
+- **Razón:** El E5 mostró un hueco: la partición P2 (espacios en los extremos) solo se probaba con quién lo lleva. Agregué `test_espacios_en_los_extremos_se_quitan_en_cada_campo` para los tres campos.
+- **Cómo la verifiqué:** Repetí el E5 y el E6 con la prueba nueva: fallan `[clase]` y `[profesor]`. Después de cada error, `git status` quedó limpio. Sección 3 de `registro_pruebas.md`, commit 7e81012.
+
+### Entrada 21
+
+- **Fecha:** 21 de noviembre de 2026
+- **Prompt:** «Actúa como generador de datos de prueba. Contexto: préstamos de videobeams de la biblioteca de la FET en Neiva; cada préstamo tiene código (VB-01 a VB-05), quién lo lleva, clase y profesor, con máximo 100 caracteres por texto. Tarea: genera 5 préstamos válidos y 5 inválidos con su mensaje de error esperado. Formato: JSON con los campos `caso`, `codigo`, `quien_lleva`, `clase`, `profesor` y, en los inválidos, `mensaje`. Restricciones: nombres inventados con apellidos comunes del Huila y materias de la FET; ninguna persona real ni pública; incluye tildes, ñ, diéresis, apóstrofo, guion, texto vacío, solo espacios, el texto «0» y textos de 100 y 101 caracteres con letras de dos bytes.»
+- **Resultado:** El archivo `tests/datos_sinteticos.json` con 10 registros y todos los casos difíciles pedidos.
+- **Decisión:** Ajustada.
+- **Razón:** La IA no incluyó teléfonos porque el sistema no los guarda, y lo dejé así. Agregué una prueba que avisa si alguien quita un caso difícil del archivo, y otra que pasa los 5 préstamos válidos por la aplicación web para comprobar que SQLite guarda y muestra bien las tildes, la ñ y el apóstrofo.
+- **Cómo la verifiqué:** Revisé que ningún nombre fuera de alguien conocido o de una persona pública. Conté los caracteres: 100 eñes son 200 bytes, y la regla las acepta porque cuenta caracteres. Las 4 pruebas de `tests/test_s7_datos_sinteticos.py` pasan con el fixture `datos_sinteticos` (sección 4 de `registro_pruebas.md`, commit e777a89).
+
 ## Reflexión de la semana 5
 
 El asistente me ayudó más a convertir la HU-08 en un contrato concreto, con firma, errores, supuestos y casos límite, y a pensar en casos que yo no habría probado, como que la función no modifique el conjunto que recibe o qué pasa cuando los 5 videobeams están prestados. Esta vez las pruebas no atraparon un error en la implementación, porque la primera versión pasó las 11 pruebas. Sí sirvieron para hacer el refactor con tranquilidad: sabía que si algo cambiaba, alguna prueba iba a fallar. El error más importante no lo atrapó una prueba sino la revisión contra mi diseño: el asistente me dijo que el proyecto era en HTML y localStorage, y el ADR-001 dice Django y SQLite. La próxima vez le pasaría el documento de diseño desde el primer mensaje y escribiría yo misma los casos límite antes de pedir sugerencias, para comparar mi lista con la del asistente.
@@ -155,3 +198,7 @@ El asistente me ayudó más a convertir la HU-08 en un contrato concreto, con fi
 ## Reflexión de la semana 6
 
 La revisión con IA fue útil para encontrar problemas reales rápido, pero la mitad de lo que marcó eran falsos positivos. Si hubiera copiado todo, habría «corregido» una inyección SQL en un código que no tiene SQL. Lo más importante, que el `.gitignore` ignoraba la plantilla `.env.example`, no lo encontró la IA: lo encontré con la lista de revisión, probando el archivo. Con el agente aprendí que la instrucción delimitada y el `git diff` antes de integrar son lo que permite confiar en su trabajo: sabía exactamente qué archivos podía tocar y lo comprobé.
+
+## Reflexión de la semana 7
+
+Lo más importante de esta semana fue ver que una suite que pasa no es lo mismo que una suite que prueba. La versión de la IA tenía 53 pruebas y 52 pasaban, pero dejaba pasar 3 de 4 errores que metí a propósito, porque comprobaba `is not None`, `isinstance(..., str)` o `pytest.raises(Exception)` en vez del valor exacto de la regla. La única prueba que falló fue la más útil: encontró un defecto real (101 caracteres guardados en la base). También aprendí que la tabla de decisión simplificada necesita sus propias pruebas: el «—» es una decisión, y hay que comprobarla. Y que mis prompts de las primeras semanas eran demasiado cortos: con rol, contexto, tarea, formato y restricciones, la IA hace menos suposiciones.
