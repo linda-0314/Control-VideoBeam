@@ -32,7 +32,9 @@ class Prestamo(models.Model):
     profesor = models.CharField(max_length=registro.LONGITUD_MAXIMA_TEXTO)
     fecha_hora_salida = models.DateTimeField()
     fecha_hora_devolucion = models.DateTimeField(null=True, blank=True)
-
+    quien_devuelve = models.CharField(
+        max_length=registro.LONGITUD_MAXIMA_TEXTO, blank=True, default=""
+    )
     class Meta:
         ordering = ["-fecha_hora_salida"]
         constraints = [
@@ -57,4 +59,5 @@ class Prestamo(models.Model):
             self.profesor,
             self.fecha_hora_salida,
             self.fecha_hora_devolucion,
+            self.quien_devuelve or None,
         )

@@ -46,6 +46,7 @@ class Prestamo:
     profesor: str
     fecha_hora_salida: datetime
     fecha_hora_devolucion: datetime | None = None
+    quien_devuelve: str | None = None
 
     @property
     def esta_abierto(self) -> bool:
@@ -123,6 +124,7 @@ def registrar_prestamo(
         "Escribe el nombre de quien lleva el videobeam",
         "El nombre de quien lleva el videobeam",
     )
+    
     clase = _texto_obligatorio(clase, "Falta la clase", "La clase")
     profesor = _texto_obligatorio(
         profesor, "Falta el nombre del profesor", "El nombre del profesor"
@@ -161,6 +163,41 @@ def registrar_devolucion(
         raise DatoInvalido("La hora de devolución no puede ser anterior a la de salida")
     return replace(abierto, fecha_hora_devolucion=fecha_hora)
 
+
+def registrar_devolucion_por(
+    codigo: str, prestamos: Iterable[Prestamo], quien_devuelve: str, fecha_hora: datetime
+) -> Prestamo:
+    """Registra la devolución con el nombre de quien trae el videobeam (HU-05).
+
+    Quien devuelve puede ser una persona distinta a quien lo sacó. Primero
+    revisa el videobeam, igual que registrar_devolucion, y después el nombre.
+
+    Args:
+        codigo: Código del videobeam que se devuelve, por ejemplo "VB-01".
+        prestamos: Todos los préstamos registrados; no se modifica.
+        quien_devuelve: Nombre de quien trae el videobeam; se le quitan los
+            espacios de los extremos.
+        fecha_hora: Fecha y hora de la devolución.
+
+    Returns:
+        Prestamo: Una copia del préstamo abierto con fecha_hora_devolucion y
+        quien_devuelve.
+
+    Raises:
+        VideobeamNoExiste: Si el código no es de la biblioteca.
+        VideobeamNoPrestado: Si el videobeam no tiene un préstamo abierto.
+        DatoInvalido: Si quien_devuelve está vacío, tiene solo espacios o es
+            None. Mensaje: "Escribe el nombre de quien devuelve el videobeam".
+            También si tiene más de 100 caracteres, o si fecha_hora es
+            anterior a la salida.
+    """
+    devuelto = registrar_devolucion(codigo, prestamos, fecha_hora)
+    nombre = _texto_obligatorio(
+        quien_devuelve,
+        "Escribe el nombre de quien devuelve el videobeam",
+        "El nombre de quien devuelve el videobeam",
+    )
+    return replace(devuelto, quien_devuelve=nombre)
 
 def _texto_obligatorio(valor: str | None, mensaje_si_falta: str, nombre_del_campo: str) -> str:
     """Devuelve el texto sin espacios en los extremos.

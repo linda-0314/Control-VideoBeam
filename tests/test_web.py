@@ -176,7 +176,8 @@ def test_abuso_un_nombre_con_html_se_muestra_como_texto(cliente):
 def test_devolucion_guarda_la_hora_y_deja_el_videobeam_disponible(cliente):
     # HU-04, escenario 1.
     prestamo = prestar("VB-02")
-    respuesta = cliente.post("/devoluciones/", {"codigo": "VB-02", "quien_devuelve": "Mateo Díaz"}, follow=True
+    respuesta = cliente.post(
+        "/devoluciones/", {"codigo": "VB-02", "quien_devuelve": "Mateo Díaz"}, follow=True
     )
     prestamo.refresh_from_db()
     assert prestamo.fecha_hora_devolucion is not None

@@ -61,14 +61,20 @@ def crear_prestamo(request: HttpRequest) -> HttpResponse:
 @login_required
 @require_POST
 def registrar_devolucion(request: HttpRequest) -> HttpResponse:
-    """HU-04: cierra el préstamo abierto del videobeam con la hora actual."""
+    """HU-04 y HU-05: cierra el préstamo abierto con la hora actual y quién lo trae."""
     codigo = request.POST.get("codigo", "")
+    quien_devuelve = request.POST.get("quien_devuelve", "")
     try:
         with transaction.atomic():
-            devuelto = registro.registrar_devolucion(codigo, _prestamos_abiertos(), timezone.now())
+            devuelto = registro.registrar_devolucion_por(
+                codigo, _prestamos_abiertos(), quien_devuelve, timezone.now()
+            )
             Prestamo.objects.filter(
                 videobeam__codigo=devuelto.codigo, fecha_hora_devolucion__isnull=True
-            ).update(fecha_hora_devolucion=devuelto.fecha_hora_devolucion)
+            ).update(
+                fecha_hora_devolucion=devuelto.fecha_hora_devolucion,
+                quien_devuelve=devuelto.quien_devuelve,
+            )
     except ErrorDePrestamo as error:
         return _pagina_inicio(request, error)
     messages.success(request, f"Devolución registrada: {devuelto.codigo}")
