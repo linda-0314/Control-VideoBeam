@@ -15,8 +15,9 @@ Diseño (semana 4): aplicación web monolítica en Python con Django y SQLite, i
 | HU-04 Registrar devolución (Must) | ✅ Formulario de devolución |
 | HU-08 No prestar uno ya prestado (Must) | ✅ Regla y restricción en la base de datos |
 | Inicio de sesión del bibliotecario con scrypt | ✅ |
-| HU-06 Pendientes de días anteriores (Should) | ✅ Tabla en la página de inicio |
-| HU-03, HU-05 (Should), HU-07 (Could) | Pendientes |
+| HU-03 Préstamo a un estudiante enviado por el profesor (Should) | ✅ Quién lo lleva y profesor por separado |
+| HU-06 Pendientes de la jornada (Should) | ✅ Tabla «No devuelto en su jornada» en la página de inicio |
+| HU-05 (Should) y HU-07 (Could) | Pendientes |
 | API en JSON de la sección 6 del diseño | Pendiente: por ahora las pantallas usan formularios HTML |
 
 ## 2. Requisitos
@@ -84,7 +85,7 @@ La planilla completa, con los préstamos ya devueltos, se consulta en http://127
 pytest
 ```
 
-Ejecuta las 132 pruebas de `tests/` (con `pytest -v` se ve cada una):
+- HU-06 (11 pruebas: 9 en `tests/test_pendientes.py` y 2 en `tests/test_web.py`). Mientras se confirman los horarios de las jornadas, un préstamo se considera no devuelto en su jornada si salió un día anterior y sigue abierto.
 
 - Reglas de HU-01, HU-02, HU-04 y HU-08 de las semanas 5 y 6 (43 pruebas).
 - Aplicación web (20 pruebas: páginas, inicio de sesión, control de acceso, abuso con códigos manipulados y HTML, contraseña con scrypt y RNF-01).
@@ -151,6 +152,7 @@ Control-VideoBeam/
 │   ├── test_disponibilidad.py    # HU-01 (6 pruebas)
 │   ├── test_registro_prestamo.py # HU-02 (11 pruebas)
 │   ├── test_devolucion.py  # HU-04 (9 pruebas)
+│   ├── test_pendientes.py  # HU-06 (9 pruebas)
 │   ├── test_web.py         # aplicación web (20 pruebas)
 │   ├── test_s7_*.py        # semana 7: tablas de casos de 4 funciones (69 pruebas)
 │   └── datos_sinteticos.json    # datos de prueba inventados (fixture datos_sinteticos)
