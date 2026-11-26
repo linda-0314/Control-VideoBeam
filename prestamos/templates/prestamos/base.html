@@ -5,42 +5,172 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block titulo %}Control VideoBeam FET{% endblock %}</title>
   <style>
-    :root { --verde: #1b6b35; --verde-claro: #e8f3ec; --rojo: #b3261e; --rojo-claro: #fdecea; --gris: #5f6368; }
+    :root {
+      /* Colores institucionales de la FET (fet.edu.co) */
+      --verde: #0f6635;
+      --verde-oscuro: #072e18;
+      --verde-titulo: #0c522a;
+      --verde-claro: #e2ede7;
+      --amarillo: #fedc03;
+      --amarillo-texto: #6b5800;
+      --amarillo-fondo: #fff7c2;
+      --crema: #f5f5e6;
+      --linea: #d9dccb;
+      --texto: #1c2a21;
+      --gris: #56635a;
+      --alerta: #a8321f;
+      --alerta-fondo: #fbe9e6;
+      --numeros: Bahnschrift, "DIN Alternate", "Arial Narrow", sans-serif;
+    }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: Arial, Helvetica, sans-serif; font-size: 16px; color: #202124; background: #f6f7f6; }
-    header { background: var(--verde); color: #fff; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
-    header h1 { font-size: 20px; margin: 0; }
-    header form { margin: 0; }
-    header button { background: transparent; color: #fff; border: 1px solid #fff; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
-    main { max-width: 960px; margin: 24px auto; padding: 0 16px; }
-    .tarjeta { background: #fff; border: 1px solid #dadce0; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
-    .disponibilidad { font-size: 28px; font-weight: bold; color: var(--verde); }
-    .disponibilidad.sin-disponibles { color: var(--rojo); }
-    .aviso { border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; }
-    .aviso.exito { background: var(--verde-claro); color: var(--verde); }
-    .aviso.error { background: var(--rojo-claro); color: var(--rojo); }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; }
-    .estado-libre { color: var(--verde); font-weight: bold; }
-    .estado-prestado { color: var(--rojo); font-weight: bold; }
-    .columnas { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    @media (max-width: 720px) { .columnas { grid-template-columns: 1fr; } }
-    label { display: block; margin: 10px 0 4px; font-weight: bold; }
-    input, select { width: 100%; padding: 8px; border: 1px solid #bdc1c6; border-radius: 6px; font-size: 16px; }
-    button.principal { margin-top: 14px; width: 100%; background: var(--verde); color: #fff; border: 0; border-radius: 6px; padding: 10px; font-size: 16px; cursor: pointer; }
-    button.principal:disabled { background: #bdc1c6; cursor: not-allowed; }
-    .nota { color: var(--gris); font-size: 14px; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      color: var(--texto);
+      background: var(--crema);
+    }
+    a { color: var(--verde); font-weight: 600; }
+    :focus-visible { outline: 3px solid var(--amarillo); outline-offset: 2px; }
+
+    /* Encabezado */
+    .barra { background: var(--verde); color: #fff; border-bottom: 5px solid var(--amarillo); }
+    .barra-contenido {
+      max-width: 1120px; margin: 0 auto; padding: 10px 20px;
+      display: flex; justify-content: space-between; align-items: center; gap: 16px;
+    }
+    .marca { display: flex; align-items: center; gap: 18px; }
+    .marca img { height: 64px; width: auto; display: block; }
+    .marca-texto { display: flex; flex-direction: column; padding-left: 18px; border-left: 1px solid #4f8f69; }
+    .marca strong { font-family: var(--numeros); font-stretch: condensed; font-size: 24px; font-weight: 700; line-height: 1.1; }
+    .marca span { font-size: 14px; color: #d4e7da; }
+    .barra form { margin: 0; }
+    .barra button {
+      background: #fff; color: var(--verde-oscuro); border: 0; border-radius: 8px;
+      padding: 8px 14px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    .barra button:hover { background: var(--amarillo); }
+
+    main { max-width: 1120px; margin: 0 auto; padding: 24px 20px 48px; }
+    h2 { font-size: 20px; margin: 0 0 12px; }
+    .nota { color: var(--gris); font-size: 14px; margin: 4px 0 0; }
+
+    /* Avisos */
+    .aviso { border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; border-left: 5px solid; }
+    .aviso.exito { background: var(--verde-claro); color: var(--verde-titulo); border-color: var(--verde); }
+    .aviso.error { background: var(--alerta-fondo); color: var(--alerta); border-color: var(--alerta); }
+
+    /* Disponibilidad y estante de videobeams */
+    .disponibilidad {
+      font-family: var(--numeros); font-stretch: condensed; font-size: 40px; font-weight: 700;
+      line-height: 1.1; color: var(--verde-titulo); margin: 4px 0 18px;
+    }
+    .disponibilidad.sin-disponibles { color: var(--alerta); }
+    .estante {
+      list-style: none; margin: 0 0 28px; padding: 0;
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+    }
+    .equipo {
+      background: #fff; border: 1px solid var(--linea); border-top: 8px solid var(--verde);
+      border-radius: 4px; padding: 12px 14px 14px; min-height: 172px;
+      display: flex; flex-direction: column;
+    }
+    .equipo.prestado { border-top-color: var(--amarillo); }
+    .equipo-codigo {
+      font-family: var(--numeros); font-size: 30px; font-weight: 600; line-height: 1;
+      font-variant-numeric: tabular-nums; color: var(--verde-titulo);
+    }
+    .equipo-estado { font-weight: 700; font-size: 15px; margin: 6px 0 10px; }
+    .libre .equipo-estado { color: var(--verde); }
+    .prestado .equipo-estado { color: var(--amarillo-texto); }
+    .equipo dl { margin: 0; font-size: 14px; }
+    .equipo dt { color: var(--gris); }
+    .equipo dd { margin: 0 0 4px; overflow-wrap: anywhere; }
+    .equipo .vacio { color: var(--gris); font-size: 14px; margin-top: auto; }
+
+    /* Listas que piden atención */
+    .atencion {
+      background: #fff; border: 1px solid var(--linea); border-left: 6px solid var(--alerta);
+      border-radius: 6px; padding: 16px 18px; margin-bottom: 20px;
+    }
+    .atencion.hdmi { border-left-color: var(--amarillo); }
+    .atencion h2 { color: var(--alerta); }
+    .atencion.hdmi h2 { color: var(--amarillo-texto); }
+
+    /* Formularios */
+    .columnas { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+    .panel { background: #fff; border: 1px solid var(--linea); border-radius: 8px; padding: 20px; }
+    .panel h2, .registro h2 { color: var(--verde-titulo); }
+    .fila { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    label { display: block; margin: 12px 0 4px; font-weight: 600; font-size: 15px; }
+    input, select {
+      width: 100%; padding: 9px 10px; border: 1px solid #b7c0cc; border-radius: 6px;
+      font: inherit; background: #fff;
+    }
+    input:focus, select:focus { border-color: var(--verde); }
+    label.casilla { display: flex; align-items: center; gap: 10px; font-weight: 600; margin-top: 16px; }
+    label.casilla input { width: 20px; height: 20px; margin: 0; accent-color: var(--verde); }
+    button.principal {
+      margin-top: 18px; width: 100%; background: var(--verde); color: #fff; border: 0;
+      border-radius: 8px; padding: 12px; font: inherit; font-weight: 700; cursor: pointer;
+    }
+    button.principal:hover { background: var(--verde-titulo); }
+    button.principal:disabled { background: #b7c0cc; cursor: not-allowed; }
+    button.secundario {
+      background: var(--amarillo); color: var(--verde-oscuro); border: 0; border-radius: 8px;
+      padding: 6px 10px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap;
+    }
+    button.secundario:hover { background: #ecc900; }
+
+    /* Tablas */
+    .tabla { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 15px; }
+    th {
+      text-align: left; font-size: 13px; font-weight: 600; color: var(--gris);
+      padding: 8px 10px; border-bottom: 2px solid var(--linea); white-space: nowrap;
+    }
+    td { padding: 10px; border-bottom: 1px solid #e6eaef; vertical-align: top; }
+    td.codigo { font-family: var(--numeros); font-weight: 700; color: var(--verde-titulo); white-space: nowrap; }
+    td.hora { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .marca-estado {
+      display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 13px; font-weight: 600;
+      background: var(--amarillo-fondo); color: var(--amarillo-texto); white-space: nowrap;
+    }
+    .registro { background: #fff; border: 1px solid var(--linea); border-radius: 8px; padding: 20px; }
+
+    @media (max-width: 960px) {
+      .estante { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 720px) {
+      .marca img { height: 48px; }
+      .marca-texto { padding-left: 12px; }
+      .estante { grid-template-columns: repeat(2, 1fr); }
+      .columnas, .fila { grid-template-columns: 1fr; }
+      .disponibilidad { font-size: 28px; }
+    }
+
+    /* Inicio de sesión */
+    .acceso { max-width: 420px; margin: 48px auto; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Control VideoBeam FET</h1>
-    {% if user.is_authenticated %}
-      <form method="post" action="{% url 'logout' %}">
-        {% csrf_token %}
-        <button type="submit">Cerrar sesión ({{ user.username }})</button>
-      </form>
-    {% endif %}
+  <header class="barra">
+    <div class="barra-contenido">
+      <div class="marca">
+        <img src="data:image/png;base64,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" alt="FET, Fundación Escuela Tecnológica de Neiva">
+        <div class="marca-texto">
+          <strong>Control VideoBeam</strong>
+          <span>Biblioteca</span>
+        </div>
+      </div>
+      {% if user.is_authenticated %}
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button type="submit">Cerrar sesión ({{ user.username }})</button>
+        </form>
+      {% endif %}
+    </div>
   </header>
   <main>
     {% block contenido %}{% endblock %}

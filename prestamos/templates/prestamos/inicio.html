@@ -8,89 +8,90 @@
     <div class="aviso error" role="alert">{{ error }}</div>
   {% endif %}
 
-  <section class="tarjeta">
-    {# HU-01 #}
-    <p class="disponibilidad{% if not disponibles %} sin-disponibles{% endif %}">{{ mensaje_disponibilidad }}</p>
-    <table>
-      <thead>
-        <tr><th>Videobeam</th><th>Estado</th><th>Quién lo lleva</th><th>Clase</th><th>Profesor</th><th>Salida</th></tr>
-      </thead>
-      <tbody>
-        {% for codigo, prestamo in videobeams %}
-          <tr>
-            <td>{{ codigo }}</td>
-            {% if prestamo %}
-              <td class="estado-prestado">Prestado</td>
-              <td>{{ prestamo.quien_lleva }}</td>
-              <td>{{ prestamo.clase }}</td>
-              <td>{{ prestamo.profesor }}</td>
-              <td>{{ prestamo.fecha_hora_salida|date:"d/m/Y g:i a" }}</td>
-            {% else %}
-              <td class="estado-libre">Disponible</td>
-              <td></td><td></td><td></td><td></td>
-            {% endif %}
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </section>
+  {# HU-01 #}
+  <p class="disponibilidad{% if not disponibles %} sin-disponibles{% endif %}">{{ mensaje_disponibilidad }}</p>
+  <ul class="estante">
+    {% for codigo, prestamo in videobeams %}
+      {% if prestamo %}
+        <li class="equipo prestado">
+          <span class="equipo-codigo">{{ codigo }}</span>
+          <span class="equipo-estado">Prestado</span>
+          <dl>
+            <dt>Lo lleva</dt><dd>{{ prestamo.quien_lleva }}</dd>
+            <dt>Profesor</dt><dd>{{ prestamo.profesor }}</dd>
+            <dt>Salió</dt><dd>{{ prestamo.fecha_hora_salida|date:"d/m g:i a" }}</dd>
+          </dl>
+        </li>
+      {% else %}
+        <li class="equipo libre">
+          <span class="equipo-codigo">{{ codigo }}</span>
+          <span class="equipo-estado">Disponible</span>
+          <p class="vacio">En la biblioteca</p>
+        </li>
+      {% endif %}
+    {% endfor %}
+  </ul>
 
   {% if pendientes %}
-    <section class="tarjeta">
+    <section class="atencion">
       {# HU-06 #}
       <h2>No devuelto en su jornada</h2>
-      <table>
-        <thead>
-          <tr><th>Videobeam</th><th>Quién lo lleva</th><th>Celular</th><th>Clase</th><th>Profesor</th><th>Salida</th></tr>
-        </thead>
-        <tbody>
-          {% for prestamo in pendientes %}
-            <tr>
-              <td>{{ prestamo.codigo }}</td>
-              <td>{{ prestamo.quien_lleva }}</td>
-              <td>{{ prestamo.celular }}</td>
-              <td>{{ prestamo.clase }}</td>
-              <td>{{ prestamo.profesor }}</td>
-              <td>{{ prestamo.fecha_hora_salida|date:"d/m/Y g:i a" }}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <div class="tabla">
+        <table>
+          <thead>
+            <tr><th>Videobeam</th><th>Quién lo lleva</th><th>Celular</th><th>Clase</th><th>Profesor</th><th>Salida</th></tr>
+          </thead>
+          <tbody>
+            {% for prestamo in pendientes %}
+              <tr>
+                <td class="codigo">{{ prestamo.codigo }}</td>
+                <td>{{ prestamo.quien_lleva }}</td>
+                <td>{% if prestamo.celular %}<a href="tel:{{ prestamo.celular }}">{{ prestamo.celular }}</a>{% endif %}</td>
+                <td>{{ prestamo.clase }}</td>
+                <td>{{ prestamo.profesor }}</td>
+                <td class="hora">{{ prestamo.fecha_hora_salida|date:"d/m/Y g:i a" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </section>
   {% endif %}
 
   {% if hdmi_por_recuperar %}
-    <section class="tarjeta">
+    <section class="atencion hdmi">
       {# HU-07 #}
       <h2>HDMI por recuperar</h2>
-      <table>
-        <thead>
-          <tr><th>Videobeam</th><th>Quién lo llevó</th><th>Identificación</th><th>Celular</th><th>Profesor</th><th>Devuelto el</th><th></th></tr>
-        </thead>
-        <tbody>
-          {% for prestamo in hdmi_por_recuperar %}
-            <tr>
-              <td>{{ prestamo.codigo }}</td>
-              <td>{{ prestamo.quien_lleva }}</td>
-              <td>{{ prestamo.identificacion }}</td>
-              <td>{{ prestamo.celular }}</td>
-              <td>{{ prestamo.profesor }}</td>
-              <td>{{ prestamo.fecha_hora_devolucion|date:"d/m/Y g:i a" }}</td>
-              <td>
-                <form method="post" action="{% url 'recuperar_hdmi' prestamo.pk %}">
-                  {% csrf_token %}
-                  <button class="principal" type="submit" style="margin-top: 0; padding: 6px 10px">HDMI recuperado</button>
-                </form>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <div class="tabla">
+        <table>
+          <thead>
+            <tr><th>Videobeam</th><th>Quién lo llevó</th><th>Identificación</th><th>Celular</th><th>Profesor</th><th>Devuelto el</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for prestamo in hdmi_por_recuperar %}
+              <tr>
+                <td class="codigo">{{ prestamo.codigo }}</td>
+                <td>{{ prestamo.quien_lleva }}</td>
+                <td>{{ prestamo.identificacion }}</td>
+                <td>{% if prestamo.celular %}<a href="tel:{{ prestamo.celular }}">{{ prestamo.celular }}</a>{% endif %}</td>
+                <td>{{ prestamo.profesor }}</td>
+                <td class="hora">{{ prestamo.fecha_hora_devolucion|date:"d/m/Y g:i a" }}</td>
+                <td>
+                  <form method="post" action="{% url 'recuperar_hdmi' prestamo.pk %}">
+                    {% csrf_token %}
+                    <button class="secundario" type="submit">Marcar HDMI recuperado</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </section>
   {% endif %}
 
   <div class="columnas">
-    <section class="tarjeta">
+    <section class="panel">
       {# HU-02, HU-08 y HU-09 #}
       <h2>Registrar préstamo</h2>
       <form method="post" action="{% url 'crear_prestamo' %}">
@@ -105,20 +106,32 @@
         </select>
         <label for="quien_lleva">Quién lo lleva</label>
         <input id="quien_lleva" name="quien_lleva" maxlength="100" value="{{ datos.quien_lleva }}">
-        <label for="identificacion">Identificación (carnet)</label>
-        <input id="identificacion" name="identificacion" maxlength="12" inputmode="numeric" value="{{ datos.identificacion }}">
-        <label for="celular">Celular (opcional)</label>
-        <input id="celular" name="celular" maxlength="12" inputmode="numeric" value="{{ datos.celular }}">
-        <label for="clase">Clase</label>
-        <input id="clase" name="clase" maxlength="100" value="{{ datos.clase }}">
-        <label for="profesor">Profesor</label>
-        <input id="profesor" name="profesor" maxlength="100" value="{{ datos.profesor }}">
-        <label><input type="checkbox" name="con_hdmi" style="width: auto" checked> Entregado con HDMI</label>
+        <div class="fila">
+          <div>
+            <label for="identificacion">Identificación (carnet)</label>
+            <input id="identificacion" name="identificacion" maxlength="12" inputmode="numeric" value="{{ datos.identificacion }}">
+          </div>
+          <div>
+            <label for="celular">Celular (opcional)</label>
+            <input id="celular" name="celular" maxlength="12" inputmode="numeric" value="{{ datos.celular }}">
+          </div>
+        </div>
+        <div class="fila">
+          <div>
+            <label for="clase">Clase</label>
+            <input id="clase" name="clase" maxlength="100" value="{{ datos.clase }}">
+          </div>
+          <div>
+            <label for="profesor">Profesor</label>
+            <input id="profesor" name="profesor" maxlength="100" value="{{ datos.profesor }}">
+          </div>
+        </div>
+        <label class="casilla"><input type="checkbox" name="con_hdmi" checked> Entregado con HDMI</label>
         <button class="principal" type="submit" {% if not disponibles %}disabled{% endif %}>Registrar préstamo</button>
       </form>
     </section>
 
-    <section class="tarjeta">
+    <section class="panel">
       {# HU-04, HU-05 y HU-07 #}
       <h2>Registrar devolución</h2>
       <form method="post" action="{% url 'registrar_devolucion' %}">
@@ -133,18 +146,18 @@
         </select>
         <label for="quien_devuelve">Quién lo devuelve</label>
         <input id="quien_devuelve" name="quien_devuelve" maxlength="100">
-        <label><input type="checkbox" name="hdmi_devuelto" style="width: auto"> HDMI devuelto</label>
+        <label class="casilla"><input type="checkbox" name="hdmi_devuelto"> HDMI devuelto</label>
         <p class="nota">Se guarda la fecha y la hora en que registras la devolución.</p>
         <button class="principal" type="submit" {% if not prestados %}disabled{% endif %}>Registrar devolución</button>
       </form>
     </section>
   </div>
 
-  <section class="tarjeta">
+  <section class="registro">
     {# HU-10 #}
     <h2>Préstamos de hoy</h2>
     {% if prestamos_de_hoy %}
-      <div style="overflow-x: auto">
+      <div class="tabla">
         <table>
           <thead>
             <tr><th>Videobeam</th><th>Quién lo lleva</th><th>Identificación</th><th>Celular</th><th>Profesor</th><th>Salida</th><th>Devolución</th><th>Quién lo devolvió</th><th>HDMI</th><th>Observación</th></tr>
@@ -152,13 +165,13 @@
           <tbody>
             {% for prestamo in prestamos_de_hoy %}
               <tr>
-                <td>{{ prestamo.codigo }}</td>
+                <td class="codigo">{{ prestamo.codigo }}</td>
                 <td>{{ prestamo.quien_lleva }}</td>
                 <td>{{ prestamo.identificacion }}</td>
-                <td>{{ prestamo.celular }}</td>
+                <td>{% if prestamo.celular %}<a href="tel:{{ prestamo.celular }}">{{ prestamo.celular }}</a>{% endif %}</td>
                 <td>{{ prestamo.profesor }}</td>
-                <td>{{ prestamo.fecha_hora_salida|date:"g:i a" }}</td>
-                <td>{% if prestamo.fecha_hora_devolucion %}{{ prestamo.fecha_hora_devolucion|date:"d/m/Y g:i a" }}{% else %}Sin devolver{% endif %}</td>
+                <td class="hora">{{ prestamo.fecha_hora_salida|date:"g:i a" }}</td>
+                <td class="hora">{% if prestamo.fecha_hora_devolucion %}{{ prestamo.fecha_hora_devolucion|date:"d/m/Y g:i a" }}{% else %}<span class="marca-estado">Sin devolver</span>{% endif %}</td>
                 <td>{{ prestamo.quien_devuelve|default:"" }}</td>
                 <td>{{ prestamo.con_hdmi|yesno:"Sí,No" }}</td>
                 <td>{{ prestamo.observacion }}</td>
