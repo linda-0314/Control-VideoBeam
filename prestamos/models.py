@@ -74,4 +74,5 @@ class Prestamo(models.Model):
             self.observacion,
             self.identificacion,
             self.celular,
+            self.pk,
         )

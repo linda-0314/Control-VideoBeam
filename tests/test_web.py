@@ -338,3 +338,54 @@ def test_los_prestamos_de_hoy_muestran_la_devolucion_y_quien_devolvio(cliente):
 
 def test_sin_prestamos_hoy_se_avisa(cliente):
     assert "Todavía no hay préstamos hoy." in texto(cliente.get("/"))
+    
+
+# ----- HU-07: marcar que el HDMI se recuperó -----
+
+
+def devuelto_sin_hdmi(cliente) -> Prestamo:
+    """Laura Gómez se llevó el VB-02 con HDMI y Sara López lo devolvió sin él."""
+    cliente.post("/prestamos/", {**DATOS_LAURA, "con_hdmi": "on"})
+    cliente.post("/devoluciones/", {"codigo": "VB-02", "quien_devuelve": "Sara López"})
+    return Prestamo.objects.get()
+
+
+def test_al_recuperar_el_hdmi_sale_de_la_lista_y_queda_el_rastro(cliente):
+    prestamo = devuelto_sin_hdmi(cliente)
+    assert "HDMI por recuperar" in texto(cliente.get("/"))
+    respuesta = cliente.post(f"/hdmi/{prestamo.pk}/recuperado/", follow=True)
+    prestamo.refresh_from_db()
+    assert "HDMI por recuperar" not in texto(respuesta)
+    assert "HDMI recuperado: VB-02 de Laura Gómez" in texto(respuesta)
+    assert prestamo.hdmi_devuelto is True
+    assert prestamo.observacion.startswith("HDMI recuperado el ")
+
+
+def test_recuperar_un_hdmi_que_no_faltaba_responde_400(cliente):
+    cliente.post("/prestamos/", {**DATOS_LAURA, "con_hdmi": "on"})
+    cliente.post(
+        "/devoluciones/",
+        {"codigo": "VB-02", "quien_devuelve": "Sara López", "hdmi_devuelto": "on"},
+    )
+    prestamo = Prestamo.objects.get()
+    respuesta = cliente.post(f"/hdmi/{prestamo.pk}/recuperado/")
+    assert respuesta.status_code == 400
+    assert "Ese préstamo no tiene un HDMI por recuperar" in texto(respuesta)
+
+
+def test_recuperar_un_prestamo_que_no_existe_responde_404(cliente):
+    assert cliente.post("/hdmi/999/recuperado/").status_code == 404
+
+
+def test_recuperar_el_hdmi_solo_acepta_post(cliente):
+    prestamo = devuelto_sin_hdmi(cliente)
+    assert cliente.get(f"/hdmi/{prestamo.pk}/recuperado/").status_code == 405
+
+
+def test_abuso_sin_sesion_no_se_puede_marcar_el_hdmi(cliente, anonimo):
+    prestamo = devuelto_sin_hdmi(cliente)
+    respuesta = anonimo.post(f"/hdmi/{prestamo.pk}/recuperado/")
+    prestamo.refresh_from_db()
+    assert respuesta.status_code == 302
+    assert respuesta.url.startswith("/cuentas/login/")
+    assert prestamo.observacion == "Devuelto sin HDMI"

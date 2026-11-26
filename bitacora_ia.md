@@ -229,6 +229,14 @@ Asistente: Claude (claude.ai), con acceso a un entorno para crear archivos, ejec
 - **Razón:** Decidí que la identificación es obligatoria (de 6 a 10 dígitos) y el celular opcional (10 dígitos, empieza por 3), y que la página muestre los préstamos de hoy. La IA me advirtió que la identificación y el celular son datos personales (Ley 1581 de 2012); no agregué la casilla de autorización y lo dejé en el README como pendiente para confirmar con la universidad. Tuve que cambiar una prueba de la semana 7 (`test_la_pagina_muestra_los_cinco_prestamos_con_sus_caracteres`) y los datos de las pruebas web, porque ahora la identificación es obligatoria; cambió el requisito, no lo que comprueban.
 - **Cómo la verifiqué:** Hice el ciclo en la rama `hu-09-10`: 6 pruebas web en rojo y después 190 en verde, `ruff` sin avisos y migración 0005. Lo probé en el navegador: sin identificación sale el error en rojo, el celular escrito con espacios se guarda solo con números, y la tabla «Préstamos de hoy» muestra la hora de salida, la devolución y quién lo devolvió.
 
+### Entrada 26
+
+- **Fecha:** 26 de noviembre de 2026
+- **Sugerencia o prompt:** «Actúa como desarrollador Django que trabaja con pruebas primero. Contexto: proyecto Control VideoBeam FET; la tabla «HDMI por recuperar» muestra los préstamos devueltos sin HDMI. Tarea: agrega una acción para marcar que el HDMI ya volvió, que lo quite de la tabla sin borrar el registro. Formato: primero cómo quedará el rastro, después rojo y verde. Restricciones: solo con sesión y por POST; si el préstamo no tenía HDMI pendiente, muestra un error; no agregues campos a la base si no hace falta.»
+- **Decisión:** Aceptada.
+- **Razón:** El préstamo no se borra ni pierde información: la observación cambia de «Devuelto sin HDMI» a «HDMI recuperado el …» con la fecha y la hora, así queda el rastro de que faltó y de cuándo volvió. No hizo falta una migración nueva.
+- **Cómo la verifiqué:** Ciclo en la rama `hdmi-recuperado`: rojo y después 198 pruebas en verde, con pruebas de abuso (sin sesión, por GET, un préstamo que no existe y uno que no tenía HDMI pendiente). Lo probé en el navegador con el VB-01: al presionar el botón, la tabla desapareció y la observación quedó con la fecha.
+
 
 ## Reflexión de la semana 5
 
