@@ -34,7 +34,29 @@
       </tbody>
     </table>
   </section>
-
+  {% if pendientes %}
+    <section class="tarjeta">
+      {# HU-06 #}
+      <h2>Pendientes de días anteriores</h2>
+      <table>
+        <thead>
+          <tr><th>Videobeam</th><th>Quién lo lleva</th><th>Clase</th><th>Profesor</th><th>Salida</th></tr>
+        </thead>
+        <tbody>
+          {% for prestamo in pendientes %}
+            <tr>
+              <td>{{ prestamo.codigo }}</td>
+              <td>{{ prestamo.quien_lleva }}</td>
+              <td>{{ prestamo.clase }}</td>
+              <td>{{ prestamo.profesor }}</td>
+              <td>{{ prestamo.fecha_hora_salida|date:"d/m/Y g:i a" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  {% endif %}
+  
   <div class="columnas">
     <section class="tarjeta">
       {# HU-02 y HU-08 #}

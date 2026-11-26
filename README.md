@@ -15,7 +15,8 @@ Diseño (semana 4): aplicación web monolítica en Python con Django y SQLite, i
 | HU-04 Registrar devolución (Must) | ✅ Formulario de devolución |
 | HU-08 No prestar uno ya prestado (Must) | ✅ Regla y restricción en la base de datos |
 | Inicio de sesión del bibliotecario con scrypt | ✅ |
-| HU-03, HU-05 y HU-06 (Should), HU-07 (Could) | Pendientes |
+| HU-06 Pendientes de días anteriores (Should) | ✅ Tabla en la página de inicio |
+| HU-03, HU-05 (Should), HU-07 (Could) | Pendientes |
 | API en JSON de la sección 6 del diseño | Pendiente: por ahora las pantallas usan formularios HTML |
 
 ## 2. Requisitos

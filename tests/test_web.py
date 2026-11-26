@@ -1,6 +1,7 @@
 """Pruebas de la aplicación web de Django: HU-01, HU-02, HU-04 y HU-08 con inicio de sesión."""
 
 import time
+from datetime import timedelta
 
 import pytest
 from django.db import IntegrityError, transaction
@@ -188,3 +189,21 @@ def test_devolver_uno_que_no_estaba_prestado_responde_409(cliente):
     respuesta = cliente.post("/devoluciones/", {"codigo": "VB-04"})
     assert respuesta.status_code == 409
     assert "El VB-04 no está prestado" in texto(respuesta)
+    
+    
+    # ----- HU-06: pendientes de días anteriores -----
+
+
+def test_un_prestamo_de_ayer_aparece_en_pendientes(cliente):
+    prestamo = prestar("VB-03")
+    prestamo.fecha_hora_salida = timezone.now() - timedelta(days=1)
+    prestamo.save()
+    respuesta = cliente.get("/")
+    assert respuesta.status_code == 200
+    assert "Pendientes de días anteriores" in texto(respuesta)
+
+
+def test_un_prestamo_de_hoy_no_aparece_en_pendientes(cliente):
+    prestar("VB-03")
+    respuesta = cliente.get("/")
+    assert "Pendientes de días anteriores" not in texto(respuesta)

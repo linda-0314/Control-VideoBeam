@@ -99,6 +99,9 @@ def _pagina_inicio(
         "videobeams": videobeams,
         "disponibles": [codigo for codigo, prestamo in videobeams if prestamo is None],
         "prestados": [codigo for codigo, prestamo in videobeams if prestamo is not None],
+        "pendientes": registro.prestamos_pendientes(
+            (p.a_registro() for p in abiertos.values()), timezone.localtime()
+        ),
         "error": error,
         "datos": datos or {},
     }
