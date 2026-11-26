@@ -77,6 +77,7 @@
         <input id="clase" name="clase" maxlength="100" value="{{ datos.clase }}">
         <label for="profesor">Profesor</label>
         <input id="profesor" name="profesor" maxlength="100" value="{{ datos.profesor }}">
+        <label><input type="checkbox" name="con_hdmi" style="width: auto" checked> Entregado con HDMI</label>
         <button class="principal" type="submit" {% if not disponibles %}disabled{% endif %}>Registrar préstamo</button>
       </form>
     </section>
@@ -96,6 +97,7 @@
         </select>
         <label for="quien_devuelve">Quién lo devuelve</label>
         <input id="quien_devuelve" name="quien_devuelve" maxlength="100">
+        <label><input type="checkbox" name="hdmi_devuelto" style="width: auto"> HDMI devuelto</label>
         <p class="nota">Se guarda la fecha y la hora en que registras la devolución.</p>
         <button class="principal" type="submit" {% if not prestados %}disabled{% endif %}>Registrar devolución</button>
       </form>

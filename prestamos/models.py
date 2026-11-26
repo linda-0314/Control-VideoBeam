@@ -35,6 +35,11 @@ class Prestamo(models.Model):
     quien_devuelve = models.CharField(
         max_length=registro.LONGITUD_MAXIMA_TEXTO, blank=True, default=""
     )
+    con_hdmi = models.BooleanField(default=False)
+    hdmi_devuelto = models.BooleanField(null=True, blank=True)
+    observacion = models.CharField(
+        max_length=registro.LONGITUD_MAXIMA_TEXTO, blank=True, default=""
+    )
     class Meta:
         ordering = ["-fecha_hora_salida"]
         constraints = [
@@ -60,4 +65,7 @@ class Prestamo(models.Model):
             self.fecha_hora_salida,
             self.fecha_hora_devolucion,
             self.quien_devuelve or None,
+            self.con_hdmi,
+            self.hdmi_devuelto,
+            self.observacion,
         )

@@ -20,6 +20,9 @@ class PrestamoAdmin(admin.ModelAdmin):
         "fecha_hora_salida",
         "fecha_hora_devolucion",
         "quien_devuelve",
+        "con_hdmi",
+        "hdmi_devuelto",
+        "observacion",
     ]
     list_filter = ["videobeam", "fecha_hora_salida"]
     search_fields = ["quien_lleva", "profesor", "clase"]

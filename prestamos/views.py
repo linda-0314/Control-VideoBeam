@@ -48,6 +48,7 @@ def crear_prestamo(request: HttpRequest) -> HttpResponse:
                 clase=nuevo.clase,
                 profesor=nuevo.profesor,
                 fecha_hora_salida=nuevo.fecha_hora_salida,
+                con_hdmi=request.POST.get("con_hdmi") == "on",
             )
     except IntegrityError:
         # Otro préstamo del mismo videobeam se guardó justo antes (restricción de la base).
@@ -61,7 +62,7 @@ def crear_prestamo(request: HttpRequest) -> HttpResponse:
 @login_required
 @require_POST
 def registrar_devolucion(request: HttpRequest) -> HttpResponse:
-    """HU-04 y HU-05: cierra el préstamo abierto con la hora actual y quién lo trae."""
+    """HU-04, HU-05 y HU-07: cierra el préstamo con la hora, quién lo trae y el HDMI."""
     codigo = request.POST.get("codigo", "")
     quien_devuelve = request.POST.get("quien_devuelve", "")
     try:
@@ -69,15 +70,23 @@ def registrar_devolucion(request: HttpRequest) -> HttpResponse:
             devuelto = registro.registrar_devolucion_por(
                 codigo, _prestamos_abiertos(), quien_devuelve, timezone.now()
             )
+            devuelto = registro.registrar_hdmi(
+                devuelto, request.POST.get("hdmi_devuelto") == "on"
+            )
             Prestamo.objects.filter(
                 videobeam__codigo=devuelto.codigo, fecha_hora_devolucion__isnull=True
             ).update(
                 fecha_hora_devolucion=devuelto.fecha_hora_devolucion,
                 quien_devuelve=devuelto.quien_devuelve,
+                hdmi_devuelto=devuelto.hdmi_devuelto,
+                observacion=devuelto.observacion,
             )
     except ErrorDePrestamo as error:
         return _pagina_inicio(request, error)
-    messages.success(request, f"Devolución registrada: {devuelto.codigo}")
+    mensaje = f"Devolución registrada: {devuelto.codigo}"
+    if devuelto.observacion:
+        mensaje += f". {devuelto.observacion}: lo llevó {devuelto.quien_lleva}"
+    messages.success(request, mensaje)
     return redirect("inicio")
 
 

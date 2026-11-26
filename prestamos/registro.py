@@ -25,6 +25,8 @@ TOTAL_VIDEOBEAMS = len(VIDEOBEAMS_DE_LA_BIBLIOTECA)
 # guarda cada campo en models.py y el maxlength del formulario.
 LONGITUD_MAXIMA_TEXTO = 100
 
+# Observación de HU-07, escenario 2.
+DEVUELTO_SIN_HDMI = "Devuelto sin HDMI"
 
 @dataclass(frozen=True)
 class Prestamo:
@@ -47,7 +49,10 @@ class Prestamo:
     fecha_hora_salida: datetime
     fecha_hora_devolucion: datetime | None = None
     quien_devuelve: str | None = None
-
+    con_hdmi: bool = False
+    hdmi_devuelto: bool | None = None
+    observacion: str = ""
+    
     @property
     def esta_abierto(self) -> bool:
         """True si el videobeam todavía no se ha devuelto."""
@@ -198,6 +203,23 @@ def registrar_devolucion_por(
         "El nombre de quien devuelve el videobeam",
     )
     return replace(devuelto, quien_devuelve=nombre)
+def registrar_hdmi(devuelto: Prestamo, hdmi_devuelto: bool) -> Prestamo:
+    """Anota si el HDMI volvió con el videobeam (HU-07).
+
+    Args:
+        devuelto: El préstamo ya cerrado por registrar_devolucion_por.
+        hdmi_devuelto: True si el bibliotecario marcó «HDMI devuelto».
+
+    Returns:
+        Prestamo: Una copia con hdmi_devuelto y observacion. Si salió con
+        HDMI y no volvió, la observación es "Devuelto sin HDMI". Si salió
+        sin HDMI, no hay nada que revisar: hdmi_devuelto queda en None y la
+        observación vacía.
+    """
+    if not devuelto.con_hdmi:
+        return replace(devuelto, hdmi_devuelto=None, observacion="")
+    observacion = "" if hdmi_devuelto else DEVUELTO_SIN_HDMI
+    return replace(devuelto, hdmi_devuelto=hdmi_devuelto, observacion=observacion)
 
 def _texto_obligatorio(valor: str | None, mensaje_si_falta: str, nombre_del_campo: str) -> str:
     """Devuelve el texto sin espacios en los extremos.
