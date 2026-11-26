@@ -196,10 +196,20 @@ Asistente: Claude (claude.ai), con acceso a un entorno para crear archivos, ejec
 
 - **Fecha:** 25 de noviembre de 2026
 - **Sugerencia o prompt:** Le pedí a la IA que revisara mi repositorio y me guiara para terminar lo que faltaba. le pedí el código de HU-06 listo para copiar: las pruebas (`tests/test_pendientes.py`), la función `prestamos_pendientes`, la vista y la tabla en `inicio.html`.
-- **Prompt mejorado (cómo lo pediría la próxima vez):** «Actúa como tutor de Python y Django. Contexto: proyecto Control VideoBeam FET; HU-06 dice que un videobeam puede quedar sin devolver en su jornada. Tarea: guíame paso a paso para que yo escriba las pruebas y la función `prestamos_pendientes`. Formato: una pista por paso y espera a que te muestre lo que escribí. Restricciones: no me des el código completo; solo dime si voy bien o qué revisar.»
+- **Prompt:**«Actúa como tutor de Python y Django. Contexto: proyecto Control VideoBeam FET; HU-06 dice que un videobeam puede quedar sin devolver en su jornada. Tarea: guíame paso a paso para que yo escriba las pruebas y la función `prestamos_pendientes`. Formato: una pista por paso y espera a que te muestre lo que escribí. Restricciones: no me des el código completo; solo dime si voy bien o qué revisar.»
 - **Decisión:** Aceptada después de verificar.
 - **Razón:** Las pruebas cubren los casos que yo había definido: sin préstamos, préstamo de hoy, de ayer sin devolver, de ayer devuelto, y los límites de 11:59 p. m. y 12:00 a. m. También cubren la zona horaria: la base guarda en UTC y una salida a las 7:00 p. m. en Neiva no debe contar como del día siguiente.
 - **Cómo la verifiqué:** Hice el ciclo en mi computador con tres commits: pruebas en rojo (`ImportError`), implementación en verde y la página. Al correr `pytest` fallaron 16 pruebas web con `TemplateSyntaxError`. Descubrí que el formateador automático de VS Code partía en dos líneas la etiqueta `{% for mensaje in messages %}`. Desactivé "Format On Save", restauré la plantilla con `git checkout` y volví a agregar la sección. Resultado final: 143 pruebas en verde y `ruff` sin avisos.
+
+
+### Entrada 23
+
+- **Fecha:** 25 de noviembre de 2026
+- **Sugerencia o prompt:** Le pedí a la IA el código de HU-05 (devolución por otra persona) listo para copiar, porque tenía poco tiempo para la entrega. Me dio las pruebas (`tests/test_devolucion_otra_persona.py` y 2 pruebas web), la función `registrar_devolucion_por`, el campo `quien_devuelve` en el modelo, la vista y el campo «Quién lo devuelve» en el formulario.
+- **Prompt** «Actúa como tutor de Django. Contexto: proyecto Control VideoBeam FET; HU-05 pide registrar quién devuelve el videobeam, aunque no sea quien lo sacó, y mostrar «Escribe el nombre de quien devuelve el videobeam» si falta. Tarea: dime qué archivos tengo que tocar y en qué orden, con pruebas primero. Formato: un paso a la vez y espera a que te muestre lo que hice. Restricciones: no me des el código completo; no cambies las reglas de HU-04 sin avisarme.»
+- **Decisión:** Ajustada.
+- **Razón:** La acepté porque cumple los dos escenarios de HU-05 de mi documento de requisitos. Tuve que cambiar una prueba de HU-04 (`test_devolucion_guarda_la_hora_y_deja_el_videobeam_disponible`) porque ahora el nombre de quien devuelve es obligatorio; cambió el requisito, no el comportamiento que comprueba. Dejé la regla de que primero se revisa el videobeam y después el nombre: si el videobeam no está prestado, no tiene sentido pedir quién lo trae.
+- **Cómo la verifiqué:** Hice el ciclo en la rama `hu-05`: pruebas en rojo (`ImportError`) y después en verde. Generé la migración con `makemigrations` y la apliqué con `migrate`. Ruff marcó 2 líneas de más de 100 caracteres que se habían juntado al pegar, y las separé. Con `git diff` descubrí que el campo «Quién lo devuelve» del formulario no había quedado en el commit: las pruebas pasaban porque envían los datos directamente, sin usar el formulario. Lo agregué en un commit aparte y lo probé en el navegador: sin nombre aparece el mensaje en rojo, y con nombre se registra la devolución. Resultado: 155 pruebas en verde y `ruff` sin avisos.
 
 
 ## Reflexión de la semana 5
