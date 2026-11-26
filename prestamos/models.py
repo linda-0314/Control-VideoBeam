@@ -40,6 +40,10 @@ class Prestamo(models.Model):
     observacion = models.CharField(
         max_length=registro.LONGITUD_MAXIMA_TEXTO, blank=True, default=""
     )
+    
+    identificacion = models.CharField(max_length=10, blank=True, default="")
+    celular = models.CharField(max_length=10, blank=True, default="")
+    
     class Meta:
         ordering = ["-fecha_hora_salida"]
         constraints = [
@@ -68,4 +72,6 @@ class Prestamo(models.Model):
             self.con_hdmi,
             self.hdmi_devuelto,
             self.observacion,
+            self.identificacion,
+            self.celular,
         )

@@ -7,6 +7,7 @@ modifica la lista que recibe ni toma la hora del reloj: la hora llega como
 parámetro para poder probarla.
 """
 
+import re
 from collections.abc import Iterable
 from dataclasses import dataclass, replace
 from datetime import datetime
@@ -52,6 +53,8 @@ class Prestamo:
     con_hdmi: bool = False
     hdmi_devuelto: bool | None = None
     observacion: str = ""
+    identificacion: str = ""
+    celular: str = ""
     
     @property
     def esta_abierto(self) -> bool:
@@ -220,6 +223,75 @@ def registrar_hdmi(devuelto: Prestamo, hdmi_devuelto: bool) -> Prestamo:
         return replace(devuelto, hdmi_devuelto=None, observacion="")
     observacion = "" if hdmi_devuelto else DEVUELTO_SIN_HDMI
     return replace(devuelto, hdmi_devuelto=hdmi_devuelto, observacion=observacion)
+def validar_contacto(identificacion: str | None, celular: str | None) -> tuple[str, str]:
+    """Revisa la identificación y el celular de quien lleva el videobeam (HU-09).
+
+    Se quitan los espacios y guiones, por ejemplo "300 123-4567".
+
+    Args:
+        identificacion: Número del carnet o documento; obligatorio.
+        celular: Celular de contacto; opcional.
+
+    Returns:
+        tuple[str, str]: La identificación y el celular solo con dígitos. El
+        celular es "" si no se escribió.
+
+    Raises:
+        DatoInvalido: "Escribe el número de identificación de quien lleva el
+            videobeam" si falta; "La identificación debe tener entre 6 y 10
+            dígitos" si no cumple; "El celular debe tener 10 dígitos y empezar
+            por 3" si se escribió uno que no cumple.
+    """
+    identificacion = _sin_separadores(identificacion)
+    if not identificacion:
+        raise DatoInvalido("Escribe el número de identificación de quien lleva el videobeam")
+    if not re.fullmatch(r"[0-9]{6,10}", identificacion):
+        raise DatoInvalido("La identificación debe tener entre 6 y 10 dígitos")
+    celular = _sin_separadores(celular)
+    if celular and not re.fullmatch(r"3[0-9]{9}", celular):
+        raise DatoInvalido("El celular debe tener 10 dígitos y empezar por 3")
+    return identificacion, celular
+
+
+def hdmi_por_recuperar(prestamos: Iterable[Prestamo]) -> list[Prestamo]:
+    """Préstamos devueltos sin su HDMI, del más antiguo al más reciente (HU-07).
+
+    Args:
+        prestamos: Préstamos registrados.
+
+    Returns:
+        list[Prestamo]: Los que tienen la observación "Devuelto sin HDMI".
+    """
+    sin_hdmi = [p for p in prestamos if p.observacion == DEVUELTO_SIN_HDMI]
+    return sorted(sin_hdmi, key=lambda p: p.fecha_hora_devolucion or p.fecha_hora_salida)
+
+
+def prestamos_del_dia(
+    prestamos: Iterable[Prestamo], fecha_hora_actual: datetime
+) -> list[Prestamo]:
+    """Préstamos que salieron el mismo día de fecha_hora_actual (HU-10).
+
+    El día se compara en la zona horaria de fecha_hora_actual, igual que en
+    prestamos_pendientes.
+
+    Args:
+        prestamos: Préstamos registrados, abiertos y cerrados.
+        fecha_hora_actual: Fecha y hora de la consulta, con zona horaria.
+
+    Returns:
+        list[Prestamo]: Los préstamos del día, en el orden en que salieron.
+    """
+    hoy = fecha_hora_actual.date()
+    zona = fecha_hora_actual.tzinfo
+    del_dia = [p for p in prestamos if p.fecha_hora_salida.astimezone(zona).date() == hoy]
+    return sorted(del_dia, key=lambda p: p.fecha_hora_salida)
+
+
+def _sin_separadores(valor: str | None) -> str:
+    """Quita espacios y guiones; None se vuelve ""."""
+    if valor is None:
+        return ""
+    return valor.replace(" ", "").replace("-", "")
 
 def _texto_obligatorio(valor: str | None, mensaje_si_falta: str, nombre_del_campo: str) -> str:
     """Devuelve el texto sin espacios en los extremos.

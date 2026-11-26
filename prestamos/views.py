@@ -5,6 +5,8 @@ las reglas de registro.py y, si una regla lanza un ErrorDePrestamo, muestran su
 mensaje con su estado_http (400, 404 o 409). Todas exigen sesión (ADR-002).
 """
 
+from datetime import timedelta
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
@@ -17,20 +19,20 @@ from prestamos import registro
 from prestamos.models import Prestamo, Videobeam
 from prestamos.reglas import ErrorDePrestamo, VideobeamYaPrestado
 
-CAMPOS_PRESTAMO = ("codigo", "quien_lleva", "clase", "profesor")
+CAMPOS_PRESTAMO = ("codigo", "quien_lleva", "identificacion", "celular", "clase", "profesor")
 
 
 @login_required
 @require_GET
 def inicio(request: HttpRequest) -> HttpResponse:
-    """HU-01: cuántos videobeams hay disponibles y el estado de cada uno."""
+    """HU-01, HU-06, HU-07 y HU-10: disponibilidad, pendientes, HDMI y préstamos de hoy."""
     return _pagina_inicio(request)
 
 
 @login_required
 @require_POST
 def crear_prestamo(request: HttpRequest) -> HttpResponse:
-    """HU-02 con la regla de HU-08: registra un préstamo o muestra por qué no."""
+    """HU-02, HU-08 y HU-09: registra un préstamo con su contacto o muestra por qué no."""
     datos = {campo: request.POST.get(campo, "") for campo in CAMPOS_PRESTAMO}
     try:
         with transaction.atomic():
@@ -42,6 +44,9 @@ def crear_prestamo(request: HttpRequest) -> HttpResponse:
                 datos["profesor"],
                 timezone.now(),
             )
+            identificacion, celular = registro.validar_contacto(
+                datos["identificacion"], datos["celular"]
+            )
             Prestamo.objects.create(
                 videobeam=Videobeam.objects.get(codigo=nuevo.codigo),
                 quien_lleva=nuevo.quien_lleva,
@@ -49,6 +54,8 @@ def crear_prestamo(request: HttpRequest) -> HttpResponse:
                 profesor=nuevo.profesor,
                 fecha_hora_salida=nuevo.fecha_hora_salida,
                 con_hdmi=request.POST.get("con_hdmi") == "on",
+                identificacion=identificacion,
+                celular=celular,
             )
     except IntegrityError:
         # Otro préstamo del mismo videobeam se guardó justo antes (restricción de la base).
@@ -106,6 +113,8 @@ def _pagina_inicio(
 ) -> HttpResponse:
     """Arma la página de inicio; con un error, responde con su estado_http."""
     abiertos = _abiertos_por_codigo()
+    guardados = Prestamo.objects.select_related("videobeam")
+    hace_un_dia = timezone.now() - timedelta(days=1)
     videobeams = [(v.codigo, abiertos.get(v.codigo)) for v in Videobeam.objects.all()]
     contexto = {
         "mensaje_disponibilidad": registro.mensaje_disponibilidad(
@@ -116,6 +125,13 @@ def _pagina_inicio(
         "prestados": [codigo for codigo, prestamo in videobeams if prestamo is not None],
         "pendientes": registro.prestamos_pendientes(
             (p.a_registro() for p in abiertos.values()), timezone.localtime()
+        ),
+        "hdmi_por_recuperar": registro.hdmi_por_recuperar(
+            p.a_registro() for p in guardados.filter(observacion=registro.DEVUELTO_SIN_HDMI)
+        ),
+        "prestamos_de_hoy": registro.prestamos_del_dia(
+            (p.a_registro() for p in guardados.filter(fecha_hora_salida__gte=hace_un_dia)),
+            timezone.localtime(),
         ),
         "error": error,
         "datos": datos or {},
