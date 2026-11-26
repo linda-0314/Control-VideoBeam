@@ -94,6 +94,8 @@
             <option value="">No hay videobeams prestados</option>
           {% endfor %}
         </select>
+        <label for="quien_devuelve">Quién lo devuelve</label>
+        <input id="quien_devuelve" name="quien_devuelve" maxlength="100">
         <p class="nota">Se guarda la fecha y la hora en que registras la devolución.</p>
         <button class="principal" type="submit" {% if not prestados %}disabled{% endif %}>Registrar devolución</button>
       </form>
