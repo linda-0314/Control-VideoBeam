@@ -176,7 +176,9 @@ def test_abuso_un_nombre_con_html_se_muestra_como_texto(cliente):
 def test_devolucion_guarda_la_hora_y_deja_el_videobeam_disponible(cliente):
     # HU-04, escenario 1.
     prestamo = prestar("VB-02")
-    respuesta = cliente.post("/devoluciones/", {"codigo": "VB-02"}, follow=True)
+    respuesta = cliente.post(
+        "/devoluciones/", {"codigo": "VB-02", "quien_devuelve": "Mateo Díaz"}, follow=True
+    )
     prestamo.refresh_from_db()
     assert prestamo.fecha_hora_devolucion is not None
     assert prestamo.fecha_hora_devolucion >= prestamo.fecha_hora_salida
@@ -207,3 +209,30 @@ def test_un_prestamo_de_hoy_no_aparece_en_pendientes(cliente):
     prestar("VB-03")
     respuesta = cliente.get("/")
     assert "No devuelto en su jornada" not in texto(respuesta)
+    
+    
+
+# ----- HU-05: devolución por otra persona -----
+
+
+def test_devuelve_otra_persona_y_se_guardan_los_dos_nombres(cliente):
+    # HU-05, escenario 1: Mateo Díaz sacó el VB-01 y lo trae Sara López.
+    prestamo = prestar("VB-01")
+    respuesta = cliente.post(
+        "/devoluciones/", {"codigo": "VB-01", "quien_devuelve": "Sara López"}, follow=True
+    )
+    prestamo.refresh_from_db()
+    assert prestamo.quien_lleva == "Mateo Díaz"
+    assert prestamo.quien_devuelve == "Sara López"
+    assert prestamo.fecha_hora_devolucion is not None
+    assert "5 de 5 videobeams disponibles" in texto(respuesta)
+
+
+def test_devolucion_sin_nombre_no_guarda_y_muestra_el_mensaje(cliente):
+    # HU-05, escenario 2.
+    prestamo = prestar("VB-01")
+    respuesta = cliente.post("/devoluciones/", {"codigo": "VB-01", "quien_devuelve": ""})
+    prestamo.refresh_from_db()
+    assert respuesta.status_code == 400
+    assert "Escribe el nombre de quien devuelve el videobeam" in texto(respuesta)
+    assert prestamo.fecha_hora_devolucion is None
