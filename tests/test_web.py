@@ -200,10 +200,10 @@ def test_un_prestamo_de_ayer_aparece_en_pendientes(cliente):
     prestamo.save()
     respuesta = cliente.get("/")
     assert respuesta.status_code == 200
-    assert "Pendientes de días anteriores" in texto(respuesta)
+    assert "No devuelto en su jornada" in texto(respuesta)
 
 
 def test_un_prestamo_de_hoy_no_aparece_en_pendientes(cliente):
     prestar("VB-03")
     respuesta = cliente.get("/")
-    assert "Pendientes de días anteriores" not in texto(respuesta)
+    assert "No devuelto en su jornada" not in texto(respuesta)
