@@ -180,3 +180,29 @@ def _texto_obligatorio(valor: str | None, mensaje_si_falta: str, nombre_del_camp
 def _prestamo_abierto(codigo: str, prestamos: Iterable[Prestamo]) -> Prestamo | None:
     """Busca el préstamo sin devolución de un videobeam; None si no hay."""
     return next((p for p in prestamos if p.codigo == codigo and p.esta_abierto), None)
+
+
+
+def prestamos_pendientes(
+    prestamos: Iterable[Prestamo], fecha_hora_actual: datetime
+) -> list[Prestamo]:
+    """Devuelve los préstamos que no se devolvieron en su jornada (HU-06).
+
+    Un préstamo está pendiente si sigue abierto y salió un día anterior al de
+    `fecha_hora_actual`. Los días se comparan en la zona horaria de
+    `fecha_hora_actual`, para que una salida de las 7:00 p. m. en Neiva no
+    cuente como del día siguiente por estar guardada en UTC.
+
+    Args:
+        prestamos: Todos los préstamos registrados, abiertos y cerrados.
+        fecha_hora_actual: Fecha y hora de la consulta, con zona horaria.
+
+    Returns:
+        list[Prestamo]: Los préstamos pendientes, del más antiguo al más reciente.
+    """
+    hoy = fecha_hora_actual.date()
+    zona = fecha_hora_actual.tzinfo
+    pendientes = [
+        p for p in prestamos if p.esta_abierto and p.fecha_hora_salida.astimezone(zona).date() < hoy
+    ]
+    return sorted(pendientes, key=lambda p: p.fecha_hora_salida)
