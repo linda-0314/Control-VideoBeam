@@ -18,7 +18,9 @@ Diseño (semana 4): aplicación web monolítica en Python con Django y SQLite, i
 | HU-03 Préstamo a un estudiante enviado por el profesor (Should) | ✅ Quién lo lleva y profesor por separado |
 | HU-05 Devolución por otra persona (Should) | ✅ Campo «Quién lo devuelve» en el formulario de devolución |
 | HU-06 Pendientes de la jornada (Should) | ✅ Tabla «No devuelto en su jornada» en la página de inicio |
-| HU-07 Control del HDMI (Could) | Pendiente |
+| HU-07 Control del HDMI (Could) | ✅ Casillas «Entregado con HDMI» y «HDMI devuelto»; tabla «HDMI por recuperar» en la página de inicio |
+| HU-09 Identificación y celular de quien lo lleva (nueva) | ✅ Identificación obligatoria (6 a 10 dígitos), celular opcional (10 dígitos, empieza por 3) |
+| HU-10 Préstamos de hoy (nueva) | ✅ Tabla con salida, devolución, quién lo devolvió, HDMI y observación || HU-07 Control del HDMI (Could) | Pendiente |
 | API en JSON de la sección 6 del diseño | Pendiente: por ahora las pantallas usan formularios HTML |
 
 ## 2. Requisitos
@@ -29,6 +31,8 @@ Diseño (semana 4): aplicación web monolítica en Python con Django y SQLite, i
   - `Django==5.2.18` (versión LTS con los últimos parches de seguridad). Instala también `asgiref`, `sqlparse` y `tzdata`.
   - `pytest==9.2.0` para las pruebas.
   - `ruff==0.16.9` para el linter.
+
+**Datos personales:** HU-09 guarda el número de identificación y el celular de quien se lleva el videobeam. Son datos personales (Ley 1581 de 2012), así que solo los ve el bibliotecario con su sesión. Queda pendiente confirmar con la universidad cómo se pide la autorización de uso de esos datos.
 
 ## 3. Instalación
 
@@ -86,28 +90,13 @@ La planilla completa, con los préstamos ya devueltos, se consulta en http://127
 pytest
 ```
 
-Ejecuta las 155 pruebas de `tests/` (con `pytest -v` se ve cada una):
+Ejecuta las 190 pruebas de `tests/` (con `pytest -v` se ve cada una):
 
 - Reglas de HU-01, HU-02, HU-04 y HU-08 de las semanas 5 y 6 (43 pruebas).
 - HU-05, devolución por otra persona (10 pruebas en `tests/test_devolucion_otra_persona.py`). Primero se revisa el videobeam y después el nombre de quien devuelve.
 - HU-06, pendientes de la jornada (9 pruebas en `tests/test_pendientes.py`). Mientras se confirman los horarios de las jornadas, un préstamo se considera no devuelto en su jornada si salió un día anterior y sigue abierto.
-- Aplicación web (24 pruebas: páginas, inicio de sesión, control de acceso, abuso con códigos manipulados y HTML, contraseña con scrypt, RNF-01, HU-05 y HU-06).
-- Suite de la semana 7 (69 pruebas en `tests/test_s7_*.py`), diseñada con particiones de equivalencia, valores límite y una tabla de decisión, y con datos sintéticos. El diseño de los casos, la revisión de las pruebas generadas por la IA y los errores introducidos a propósito están en [registro_pruebas.md](registro_pruebas.md).
+- HU-07, control del HDMI (4 pruebas en `tests/test_hdmi.py`). La casilla «Entregado con HDMI» viene marcada porque el HDMI siempre se entrega; si un videobeam sale sin HDMI, al
 
-Las pruebas web crean una base de datos en memoria, así que no tocan `db.sqlite3`.
-
-Linter con reglas de estilo, errores, errores probables y seguridad (configurado en `pyproject.toml`):
-
-```powershell
-ruff check .
-```
-
-Auditoría de dependencias:
-
-```powershell
-pip install pip-audit
-pip-audit -r requirements.txt
-```
 ### Contratos de las funciones principales
 
 | Función | Historia | Devuelve | Errores |
@@ -141,12 +130,12 @@ Control-VideoBeam/
 ├── config/                 # proyecto Django: settings.py (lee .env), urls.py, wsgi.py
 ├── prestamos/              # app de préstamos (ADR-001)
 │   ├── reglas.py           # regla de HU-08 y errores ErrorDePrestamo (400, 404, 409)
-│   ├── registro.py         # reglas de HU-01, HU-02 y HU-04 en Python puro
+│   ├── registro.py         # reglas de HU-01 a HU-07, HU-09 y HU-10 en Python puro
 │   ├── models.py           # Videobeam y Prestamo (diseño, sección 5)
 │   ├── views.py            # inicio, crear_prestamo y registrar_devolucion
 │   ├── urls.py             # rutas /, /prestamos/ y /devoluciones/
 │   ├── admin.py            # planilla completa en /admin/
-│   ├── migrations/         # tablas y los 5 videobeams iniciales
+│   ├── migrations/         # tablas, los 5 videobeams iniciales y los campos nuevos (HU-05, HU-07, HU-09)
 │   └── templates/          # páginas HTML: inicio y inicio de sesión
 ├── tests/
 │   ├── conftest.py         # datos de prueba y base de datos de prueba de Django
@@ -156,7 +145,10 @@ Control-VideoBeam/
 │   ├── test_devolucion.py  # HU-04 (9 pruebas)
 │   ├── test_devolucion_otra_persona.py  # HU-05 (10 pruebas)
 │   ├── test_pendientes.py  # HU-06 (9 pruebas)
-│   ├── test_web.py         # aplicación web (24 pruebas)
+│   ├── test_hdmi.py        # HU-07 (4 pruebas)
+│   ├── test_contacto.py    # HU-09 (16 pruebas)
+│   ├── test_historial.py   # HU-10 y HDMI por recuperar (5 pruebas)
+│   ├── test_web.py         # aplicación web (34 pruebas)
 │   ├── test_s7_*.py        # semana 7: tablas de casos de 4 funciones (69 pruebas)
 │   └── datos_sinteticos.json    # datos de prueba inventados (fixture datos_sinteticos)
 ├── manage.py               # comandos de Django
@@ -167,6 +159,7 @@ Control-VideoBeam/
 ├── registro_pruebas.md     # reglas, tablas de casos y revisión de las pruebas (semana 7)
 ├── requirements.txt        # dependencias con versión fijada
 ├── revision_seguridad.md   # informe de revisión de código y seguridad
+└── README.mdridad.md   # informe de revisión de código y seguridad
 └── README.md
 ```
 
