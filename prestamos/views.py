@@ -11,7 +11,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
@@ -94,6 +94,22 @@ def registrar_devolucion(request: HttpRequest) -> HttpResponse:
     if devuelto.observacion:
         mensaje += f". {devuelto.observacion}: lo llevó {devuelto.quien_lleva}"
     messages.success(request, mensaje)
+    return redirect("inicio")
+
+
+@login_required
+@require_POST
+def recuperar_hdmi(request: HttpRequest, pk: int) -> HttpResponse:
+    """HU-07: el HDMI que faltaba ya volvió; sale de «HDMI por recuperar»."""
+    guardado = get_object_or_404(Prestamo.objects.select_related("videobeam"), pk=pk)
+    try:
+        recuperado = registro.recuperar_hdmi(guardado.a_registro(), timezone.localtime())
+    except ErrorDePrestamo as error:
+        return _pagina_inicio(request, error)
+    Prestamo.objects.filter(pk=pk).update(
+        hdmi_devuelto=recuperado.hdmi_devuelto, observacion=recuperado.observacion
+    )
+    messages.success(request, f"HDMI recuperado: {recuperado.codigo} de {recuperado.quien_lleva}")
     return redirect("inicio")
 
 

@@ -55,6 +55,7 @@ class Prestamo:
     observacion: str = ""
     identificacion: str = ""
     celular: str = ""
+    pk: int | None = None
     
     @property
     def esta_abierto(self) -> bool:
@@ -223,6 +224,29 @@ def registrar_hdmi(devuelto: Prestamo, hdmi_devuelto: bool) -> Prestamo:
         return replace(devuelto, hdmi_devuelto=None, observacion="")
     observacion = "" if hdmi_devuelto else DEVUELTO_SIN_HDMI
     return replace(devuelto, hdmi_devuelto=hdmi_devuelto, observacion=observacion)
+def recuperar_hdmi(prestamo: Prestamo, fecha_hora: datetime) -> Prestamo:
+    """Marca que el HDMI que faltaba ya volvió a la biblioteca (HU-07).
+
+    El préstamo sale de la lista «HDMI por recuperar», pero la observación
+    guarda cuándo se recuperó, para que quede el rastro.
+
+    Args:
+        prestamo: Un préstamo con la observación "Devuelto sin HDMI".
+        fecha_hora: Fecha y hora en que se recuperó, en la hora local.
+
+    Returns:
+        Prestamo: Una copia con hdmi_devuelto en True y la observación
+        "HDMI recuperado el 26/11/2026 11:40".
+
+    Raises:
+        DatoInvalido: "Ese préstamo no tiene un HDMI por recuperar" si su
+            observación no es "Devuelto sin HDMI".
+    """
+    if prestamo.observacion != DEVUELTO_SIN_HDMI:
+        raise DatoInvalido("Ese préstamo no tiene un HDMI por recuperar")
+    observacion = f"HDMI recuperado el {fecha_hora:%d/%m/%Y %H:%M}"
+    return replace(prestamo, hdmi_devuelto=True, observacion=observacion)
+
 def validar_contacto(identificacion: str | None, celular: str | None) -> tuple[str, str]:
     """Revisa la identificación y el celular de quien lleva el videobeam (HU-09).
 

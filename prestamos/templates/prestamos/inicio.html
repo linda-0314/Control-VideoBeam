@@ -65,7 +65,7 @@
       <h2>HDMI por recuperar</h2>
       <table>
         <thead>
-          <tr><th>Videobeam</th><th>Quién lo llevó</th><th>Identificación</th><th>Celular</th><th>Profesor</th><th>Devuelto el</th></tr>
+          <tr><th>Videobeam</th><th>Quién lo llevó</th><th>Identificación</th><th>Celular</th><th>Profesor</th><th>Devuelto el</th><th></th></tr>
         </thead>
         <tbody>
           {% for prestamo in hdmi_por_recuperar %}
@@ -76,6 +76,12 @@
               <td>{{ prestamo.celular }}</td>
               <td>{{ prestamo.profesor }}</td>
               <td>{{ prestamo.fecha_hora_devolucion|date:"d/m/Y g:i a" }}</td>
+              <td>
+                <form method="post" action="{% url 'recuperar_hdmi' prestamo.pk %}">
+                  {% csrf_token %}
+                  <button class="principal" type="submit" style="margin-top: 0; padding: 6px 10px">HDMI recuperado</button>
+                </form>
+              </td>
             </tr>
           {% endfor %}
         </tbody>
