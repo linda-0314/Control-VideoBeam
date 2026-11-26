@@ -190,6 +190,17 @@ Asistente: Claude (claude.ai), con acceso a un entorno para crear archivos, ejec
 - **Decisión:** Ajustada.
 - **Razón:** La IA no incluyó teléfonos porque el sistema no los guarda, y lo dejé así. Agregué una prueba que avisa si alguien quita un caso difícil del archivo, y otra que pasa los 5 préstamos válidos por la aplicación web para comprobar que SQLite guarda y muestra bien las tildes, la ñ y el apóstrofo.
 - **Cómo la verifiqué:** Revisé que ningún nombre fuera de alguien conocido o de una persona pública. Conté los caracteres: 100 eñes son 200 bytes, y la regla las acepta porque cuenta caracteres. Las 4 pruebas de `tests/test_s7_datos_sinteticos.py` pasan con el fixture `datos_sinteticos` (sección 4 de `registro_pruebas.md`, commit e777a89).
+## Entradas del 25 de noviembre (HU-06)
+
+### Entrada 22
+
+- **Fecha:** 25 de noviembre de 2026
+- **Sugerencia o prompt:** Le pedí a la IA que revisara mi repositorio y me guiara para terminar lo que faltaba. le pedí el código de HU-06 listo para copiar: las pruebas (`tests/test_pendientes.py`), la función `prestamos_pendientes`, la vista y la tabla en `inicio.html`.
+- **Prompt mejorado (cómo lo pediría la próxima vez):** «Actúa como tutor de Python y Django. Contexto: proyecto Control VideoBeam FET; HU-06 dice que un videobeam puede quedar sin devolver en su jornada. Tarea: guíame paso a paso para que yo escriba las pruebas y la función `prestamos_pendientes`. Formato: una pista por paso y espera a que te muestre lo que escribí. Restricciones: no me des el código completo; solo dime si voy bien o qué revisar.»
+- **Decisión:** Aceptada después de verificar.
+- **Razón:** Las pruebas cubren los casos que yo había definido: sin préstamos, préstamo de hoy, de ayer sin devolver, de ayer devuelto, y los límites de 11:59 p. m. y 12:00 a. m. También cubren la zona horaria: la base guarda en UTC y una salida a las 7:00 p. m. en Neiva no debe contar como del día siguiente.
+- **Cómo la verifiqué:** Hice el ciclo en mi computador con tres commits: pruebas en rojo (`ImportError`), implementación en verde y la página. Al correr `pytest` fallaron 16 pruebas web con `TemplateSyntaxError`. Descubrí que el formateador automático de VS Code partía en dos líneas la etiqueta `{% for mensaje in messages %}`. Desactivé "Format On Save", restauré la plantilla con `git checkout` y volví a agregar la sección. Resultado final: 143 pruebas en verde y `ruff` sin avisos.
+
 
 ## Reflexión de la semana 5
 
@@ -202,3 +213,9 @@ La revisión con IA fue útil para encontrar problemas reales rápido, pero la m
 ## Reflexión de la semana 7
 
 Lo más importante de esta semana fue ver que una suite que pasa no es lo mismo que una suite que prueba. La versión de la IA tenía 53 pruebas y 52 pasaban, pero dejaba pasar 3 de 4 errores que metí a propósito, porque comprobaba `is not None`, `isinstance(..., str)` o `pytest.raises(Exception)` en vez del valor exacto de la regla. La única prueba que falló fue la más útil: encontró un defecto real (101 caracteres guardados en la base). También aprendí que la tabla de decisión simplificada necesita sus propias pruebas: el «—» es una decisión, y hay que comprobarla. Y que mis prompts de las primeras semanas eran demasiado cortos: con rol, contexto, tarea, formato y restricciones, la IA hace menos suposiciones.
+
+## Reflexión de la semana 8
+
+Esta semana me di cuenta de que había dejado que la IA hiciera demasiado del proyecto para HU-06 usé la IA para el código, pero hice yo el ciclo completo en mi máquina: pruebas en rojo, implementación en verde y la página, cada parte con su commit. Lo que más me enseñó fue un error que no venía del código: al guardar, el formateador de VS Code partía en dos líneas una etiqueta de Django y fallaban 16 pruebas. Tuve que leer el error, revisar el archivo con `Get-Content`, encontrar la causa y restaurarlo con `git checkout`. Ahí entendí que las pruebas no solo sirven para mi código, también detectan problemas del entorno.
+
+De ahora en adelante quiero usar la IA como tutora y no como quien hace el trabajo: pedirle pistas en vez de soluciones completas y escribir yo primero, para que me corrija después. Así puedo explicar lo que entrego.
