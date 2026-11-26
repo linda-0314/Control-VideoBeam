@@ -70,3 +70,28 @@ Después de las correcciones, `ruff check .` dice «All checks passed!» y las 1
 | `DEBUG` en el computador de la biblioteca | Depende de cómo se instale. | Dejar `DJANGO_DEBUG=False` en el `.env` de la biblioteca, como en `.env.example`. |
 
 **Claves expuestas:** Ninguna. Revisé todo el historial con `git log -p --all` y no hay claves, contraseñas ni archivos `.env`. La clave de las pruebas (`tests/conftest.py`) solo sirve para la base de datos en memoria de las pruebas.
+
+## 5. Revisión del 26 de noviembre (HU-05, HU-06, HU-07, HU-09 y HU-10)
+
+Después de la semana 7 se agregaron campos, pantallas y una ruta nueva. Repetí los puntos de seguridad sobre lo nuevo.
+
+- **Linter:** `ruff check .` con las reglas E, F, B y S: «All checks passed!».
+- **Pruebas:** 198 en verde con `pytest`.
+- **Auditoría de dependencias:** `pip-audit -r requirements.txt` sobre Django 5.2.18, pytest 9.2.0 y ruff 0.16.9: «No known vulnerabilities found».
+
+| Punto | Qué se agregó | Resultado |
+|---|---|---|
+| Control de acceso | Ruta nueva `POST /hdmi/<id>/recuperado/` para marcar que el HDMI volvió. | Tiene `login_required` y `require_POST`, y el formulario lleva token CSRF. Pruebas de abuso: sin sesión redirige al inicio de sesión y no cambia nada (`test_abuso_sin_sesion_no_se_puede_marcar_el_hdmi`), por GET responde 405, un préstamo que no existe da 404 y uno sin HDMI pendiente da 400. |
+| Validación de entradas | Campos nuevos: quién devuelve (HU-05), identificación y celular (HU-09), casillas del HDMI (HU-07). | Quién devuelve usa el mismo límite de 100 caracteres que los otros nombres. La identificación solo acepta de 6 a 10 dígitos del 0 al 9 y el celular 10 dígitos que empiezan por 3; una prueba comprueba que no se aceptan dígitos de otros alfabetos (por ejemplo, «²²²²²²»). Las casillas solo se aceptan si llegan como «on». |
+| Inyección | Consultas nuevas para «HDMI por recuperar» y «Préstamos de hoy». | Solo se usa el ORM de Django con filtros (`filter`), sin `raw()` ni texto pegado. |
+| XSS | Tablas nuevas que muestran nombres, identificación, celular y observaciones. | Las plantillas siguen sin `\|safe`, así que Django escapa todo el texto. |
+| Datos personales | HU-09 guarda la identificación y el celular de quien se lleva el videobeam. | Son datos personales (Ley 1581 de 2012). Se guardan solo los mínimos para contactar a la persona, y solo los ve el bibliotecario con su sesión. Queda pendiente la autorización de uso (ver la tabla de abajo). |
+| Integridad del registro | Marcar que el HDMI volvió. | No se borra ni se cambia el préstamo: solo se actualizan `hdmi_devuelto` y la observación, que guarda la fecha («HDMI recuperado el …»). |
+
+### Pendientes nuevos
+
+| Pendiente | Por qué no se corrigió todavía | Plan |
+|---|---|---|
+| Autorización para usar los datos personales (Ley 1581 de 2012) | Hay que saber cómo la pide la universidad. | Confirmar con la FET si basta un aviso de privacidad o hace falta una casilla de autorización en el formulario del préstamo. |
+| El bibliotecario puede modificar o borrar préstamos desde `/admin/` | El admin de Django no pasa por las reglas de `registro.py`. | Usarlo solo para correcciones. Lo del día a día (pendientes, HDMI por recuperar, préstamos de hoy) ya está en la página de inicio. Más adelante se podría dejar el admin en solo lectura. |
+| `runserver --insecure` | Se usa en el computador de desarrollo para ver los estilos del admin con `DEBUG=False`. | No usarlo en el computador de la biblioteca. |
