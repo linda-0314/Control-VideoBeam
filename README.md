@@ -95,9 +95,10 @@ Ejecuta las 198 pruebas de `tests/` (con `pytest -v` se ve cada una):
 - Reglas de HU-01, HU-02, HU-04 y HU-08 de las semanas 5 y 6 (43 pruebas).
 - HU-05, devolución por otra persona (10 pruebas en `tests/test_devolucion_otra_persona.py`). Primero se revisa el videobeam y después el nombre de quien devuelve.
 - HU-06, pendientes de la jornada (9 pruebas en `tests/test_pendientes.py`). Mientras se confirman los horarios de las jornadas, un préstamo se considera no devuelto en su jornada si salió un día anterior y sigue abierto.
-- HU-07, control del HDMI (7 pruebas en `tests/test_hdmi.py`). La casilla «Entregado con HDMI» viene marcada porque el HDMI siempre se entrega; si un videobeam sale sin HDMI, al devolverlo no se revisa. Cuando el HDMI que faltaba vuelve, el botón «HDMI recuperado» lo quita de la lista y la observación guarda la fecha.- HU-09, identificación y celular (16 pruebas en `tests/test_contacto.py`, con los límites de 6 y 10 dígitos).
+- HU-07, control del HDMI (7 pruebas en `tests/test_hdmi.py`). La casilla «Entregado con HDMI» viene marcada porque el HDMI siempre se entrega; si un videobeam sale sin HDMI, al devolverlo no se revisa. Cuando el HDMI que faltaba vuelve, el botón «HDMI recuperado» lo quita de la lista y la observación guarda la fecha.
+- HU-09, identificación y celular (16 pruebas en `tests/test_contacto.py`, con los límites de 6 y 10 dígitos).
 - HU-10 y HDMI por recuperar (5 pruebas en `tests/test_historial.py`).
-- Aplicación web (34 pruebas: páginas, inicio de sesión, control de acceso, abuso con códigos manipulados y HTML, contraseña con scrypt, RNF-01, HU-05, HU-06, HU-07, HU-09 y HU-10).
+- Aplicación web (39 pruebas: páginas, inicio de sesión, control de acceso, abuso con códigos manipulados y HTML, contraseña con scrypt, RNF-01, HU-05, HU-06, HU-07, HU-09, HU-10 y HDMI recuperado).
 - Suite de la semana 7 (69 pruebas en `tests/test_s7_*.py`), diseñada con particiones de equivalencia, valores límite y una tabla de decisión, y con datos sintéticos. El diseño de los casos, la revisión de las pruebas generadas por la IA y los errores introducidos a propósito están en [registro_pruebas.md](registro_pruebas.md).
 
 Las pruebas web crean una base de datos en memoria, así que no tocan `db.sqlite3`.
