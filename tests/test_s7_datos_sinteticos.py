@@ -51,7 +51,11 @@ def test_la_pagina_muestra_los_cinco_prestamos_con_sus_caracteres(cliente, datos
     # Los 5 préstamos válidos por la aplicación web: tildes, ñ y apóstrofo
     # se guardan en SQLite y se muestran iguales (el HTML escapa el apóstrofo).
     for dato in datos_sinteticos["validos"]:
-        formulario = {"codigo": dato["codigo"], **{c: dato[c] for c in CAMPOS}}
+        formulario = {
+            "codigo": dato["codigo"],
+            "identificacion": "1075123456",
+            **{c: dato[c] for c in CAMPOS},
+        }
         respuesta = cliente.post("/prestamos/", formulario)
         assert respuesta.status_code == 302, dato["caso"]
     pagina = html.unescape(cliente.get("/").content.decode())

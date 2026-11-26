@@ -34,19 +34,21 @@
       </tbody>
     </table>
   </section>
+
   {% if pendientes %}
     <section class="tarjeta">
       {# HU-06 #}
       <h2>No devuelto en su jornada</h2>
       <table>
         <thead>
-          <tr><th>Videobeam</th><th>Quién lo lleva</th><th>Clase</th><th>Profesor</th><th>Salida</th></tr>
+          <tr><th>Videobeam</th><th>Quién lo lleva</th><th>Celular</th><th>Clase</th><th>Profesor</th><th>Salida</th></tr>
         </thead>
         <tbody>
           {% for prestamo in pendientes %}
             <tr>
               <td>{{ prestamo.codigo }}</td>
               <td>{{ prestamo.quien_lleva }}</td>
+              <td>{{ prestamo.celular }}</td>
               <td>{{ prestamo.clase }}</td>
               <td>{{ prestamo.profesor }}</td>
               <td>{{ prestamo.fecha_hora_salida|date:"d/m/Y g:i a" }}</td>
@@ -56,10 +58,34 @@
       </table>
     </section>
   {% endif %}
-  
+
+  {% if hdmi_por_recuperar %}
+    <section class="tarjeta">
+      {# HU-07 #}
+      <h2>HDMI por recuperar</h2>
+      <table>
+        <thead>
+          <tr><th>Videobeam</th><th>Quién lo llevó</th><th>Identificación</th><th>Celular</th><th>Profesor</th><th>Devuelto el</th></tr>
+        </thead>
+        <tbody>
+          {% for prestamo in hdmi_por_recuperar %}
+            <tr>
+              <td>{{ prestamo.codigo }}</td>
+              <td>{{ prestamo.quien_lleva }}</td>
+              <td>{{ prestamo.identificacion }}</td>
+              <td>{{ prestamo.celular }}</td>
+              <td>{{ prestamo.profesor }}</td>
+              <td>{{ prestamo.fecha_hora_devolucion|date:"d/m/Y g:i a" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  {% endif %}
+
   <div class="columnas">
     <section class="tarjeta">
-      {# HU-02 y HU-08 #}
+      {# HU-02, HU-08 y HU-09 #}
       <h2>Registrar préstamo</h2>
       <form method="post" action="{% url 'crear_prestamo' %}">
         {% csrf_token %}
@@ -73,16 +99,21 @@
         </select>
         <label for="quien_lleva">Quién lo lleva</label>
         <input id="quien_lleva" name="quien_lleva" maxlength="100" value="{{ datos.quien_lleva }}">
+        <label for="identificacion">Identificación (carnet)</label>
+        <input id="identificacion" name="identificacion" maxlength="12" inputmode="numeric" value="{{ datos.identificacion }}">
+        <label for="celular">Celular (opcional)</label>
+        <input id="celular" name="celular" maxlength="12" inputmode="numeric" value="{{ datos.celular }}">
         <label for="clase">Clase</label>
         <input id="clase" name="clase" maxlength="100" value="{{ datos.clase }}">
         <label for="profesor">Profesor</label>
         <input id="profesor" name="profesor" maxlength="100" value="{{ datos.profesor }}">
+        <label><input type="checkbox" name="con_hdmi" style="width: auto" checked> Entregado con HDMI</label>
         <button class="principal" type="submit" {% if not disponibles %}disabled{% endif %}>Registrar préstamo</button>
       </form>
     </section>
 
     <section class="tarjeta">
-      {# HU-04 #}
+      {# HU-04, HU-05 y HU-07 #}
       <h2>Registrar devolución</h2>
       <form method="post" action="{% url 'registrar_devolucion' %}">
         {% csrf_token %}
@@ -96,9 +127,42 @@
         </select>
         <label for="quien_devuelve">Quién lo devuelve</label>
         <input id="quien_devuelve" name="quien_devuelve" maxlength="100">
+        <label><input type="checkbox" name="hdmi_devuelto" style="width: auto"> HDMI devuelto</label>
         <p class="nota">Se guarda la fecha y la hora en que registras la devolución.</p>
         <button class="principal" type="submit" {% if not prestados %}disabled{% endif %}>Registrar devolución</button>
       </form>
     </section>
   </div>
+
+  <section class="tarjeta">
+    {# HU-10 #}
+    <h2>Préstamos de hoy</h2>
+    {% if prestamos_de_hoy %}
+      <div style="overflow-x: auto">
+        <table>
+          <thead>
+            <tr><th>Videobeam</th><th>Quién lo lleva</th><th>Identificación</th><th>Celular</th><th>Profesor</th><th>Salida</th><th>Devolución</th><th>Quién lo devolvió</th><th>HDMI</th><th>Observación</th></tr>
+          </thead>
+          <tbody>
+            {% for prestamo in prestamos_de_hoy %}
+              <tr>
+                <td>{{ prestamo.codigo }}</td>
+                <td>{{ prestamo.quien_lleva }}</td>
+                <td>{{ prestamo.identificacion }}</td>
+                <td>{{ prestamo.celular }}</td>
+                <td>{{ prestamo.profesor }}</td>
+                <td>{{ prestamo.fecha_hora_salida|date:"g:i a" }}</td>
+                <td>{% if prestamo.fecha_hora_devolucion %}{{ prestamo.fecha_hora_devolucion|date:"d/m/Y g:i a" }}{% else %}Sin devolver{% endif %}</td>
+                <td>{{ prestamo.quien_devuelve|default:"" }}</td>
+                <td>{{ prestamo.con_hdmi|yesno:"Sí,No" }}</td>
+                <td>{{ prestamo.observacion }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="nota">Todavía no hay préstamos hoy.</p>
+    {% endif %}
+  </section>
 {% endblock %}

@@ -12,6 +12,8 @@ from prestamos.models import Prestamo, Videobeam
 DATOS_LAURA = {
     "codigo": "VB-02",
     "quien_lleva": "Laura Gómez",
+    "identificacion": "1075123456",
+    "celular": "3001234567",
     "clase": "Bases de datos",
     "profesor": "Andrés Ruiz",
 }
@@ -236,3 +238,103 @@ def test_devolucion_sin_nombre_no_guarda_y_muestra_el_mensaje(cliente):
     assert respuesta.status_code == 400
     assert "Escribe el nombre de quien devuelve el videobeam" in texto(respuesta)
     assert prestamo.fecha_hora_devolucion is None
+    
+
+
+# ----- HU-07: control del HDMI -----
+
+
+def test_prestamo_con_hdmi_queda_marcado(cliente):
+    cliente.post("/prestamos/", {**DATOS_LAURA, "con_hdmi": "on"})
+    assert Prestamo.objects.get().con_hdmi is True
+
+
+def test_devuelto_con_hdmi_queda_sin_observaciones(cliente):
+    # HU-07, escenario 1.
+    prestamo = prestar("VB-05")
+    prestamo.con_hdmi = True
+    prestamo.save()
+    cliente.post(
+        "/devoluciones/",
+        {"codigo": "VB-05", "quien_devuelve": "Mateo Díaz", "hdmi_devuelto": "on"},
+    )
+    prestamo.refresh_from_db()
+    assert prestamo.fecha_hora_devolucion is not None
+    assert prestamo.hdmi_devuelto is True
+    assert prestamo.observacion == ""
+
+
+def test_devuelto_sin_hdmi_queda_disponible_con_la_observacion(cliente):
+    # HU-07, escenario 2.
+    prestamo = prestar("VB-05")
+    prestamo.con_hdmi = True
+    prestamo.save()
+    respuesta = cliente.post(
+        "/devoluciones/", {"codigo": "VB-05", "quien_devuelve": "Mateo Díaz"}, follow=True
+    )
+    prestamo.refresh_from_db()
+    assert prestamo.fecha_hora_devolucion is not None
+    assert prestamo.observacion == "Devuelto sin HDMI"
+    assert "5 de 5 videobeams disponibles" in texto(respuesta)
+    assert "Devuelto sin HDMI: lo llevó Mateo Díaz" in texto(respuesta)
+
+
+
+# ----- HU-07: HDMI por recuperar en la página de inicio -----
+
+
+def test_un_hdmi_no_devuelto_aparece_para_recuperar(cliente):
+    cliente.post("/prestamos/", {**DATOS_LAURA, "con_hdmi": "on"})
+    cliente.post("/devoluciones/", {"codigo": "VB-02", "quien_devuelve": "Sara López"})
+    pagina = texto(cliente.get("/"))
+    assert "HDMI por recuperar" in pagina
+    assert "3001234567" in pagina
+
+
+def test_si_el_hdmi_volvio_no_hay_nada_por_recuperar(cliente):
+    cliente.post("/prestamos/", {**DATOS_LAURA, "con_hdmi": "on"})
+    cliente.post(
+        "/devoluciones/",
+        {"codigo": "VB-02", "quien_devuelve": "Sara López", "hdmi_devuelto": "on"},
+    )
+    assert "HDMI por recuperar" not in texto(cliente.get("/"))
+
+
+# ----- HU-09: identificación y celular de quien lleva el videobeam -----
+
+
+def test_el_prestamo_guarda_identificacion_y_celular(cliente):
+    cliente.post("/prestamos/", {**DATOS_LAURA, "celular": "300 123 4567"})
+    prestamo = Prestamo.objects.get()
+    assert prestamo.identificacion == "1075123456"
+    assert prestamo.celular == "3001234567"
+
+
+def test_sin_identificacion_no_guarda_y_muestra_el_mensaje(cliente):
+    respuesta = cliente.post("/prestamos/", {**DATOS_LAURA, "identificacion": ""})
+    assert respuesta.status_code == 400
+    assert "Escribe el número de identificación de quien lleva el videobeam" in texto(respuesta)
+    assert Prestamo.objects.count() == 0
+
+
+def test_celular_invalido_no_guarda_y_muestra_el_mensaje(cliente):
+    respuesta = cliente.post("/prestamos/", {**DATOS_LAURA, "celular": "12345"})
+    assert respuesta.status_code == 400
+    assert "El celular debe tener 10 dígitos y empezar por 3" in texto(respuesta)
+    assert Prestamo.objects.count() == 0
+
+
+# ----- HU-10: préstamos de hoy con fechas y horas -----
+
+
+def test_los_prestamos_de_hoy_muestran_la_devolucion_y_quien_devolvio(cliente):
+    cliente.post("/prestamos/", DATOS_LAURA)
+    cliente.post("/devoluciones/", {"codigo": "VB-02", "quien_devuelve": "Sara López"})
+    pagina = texto(cliente.get("/"))
+    assert "Préstamos de hoy" in pagina
+    assert "Sara López" in pagina
+    assert "Sin devolver" not in pagina
+
+
+def test_sin_prestamos_hoy_se_avisa(cliente):
+    assert "Todavía no hay préstamos hoy." in texto(cliente.get("/"))
