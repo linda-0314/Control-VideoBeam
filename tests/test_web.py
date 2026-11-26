@@ -236,3 +236,42 @@ def test_devolucion_sin_nombre_no_guarda_y_muestra_el_mensaje(cliente):
     assert respuesta.status_code == 400
     assert "Escribe el nombre de quien devuelve el videobeam" in texto(respuesta)
     assert prestamo.fecha_hora_devolucion is None
+    
+
+
+# ----- HU-07: control del HDMI -----
+
+
+def test_prestamo_con_hdmi_queda_marcado(cliente):
+    cliente.post("/prestamos/", {**DATOS_LAURA, "con_hdmi": "on"})
+    assert Prestamo.objects.get().con_hdmi is True
+
+
+def test_devuelto_con_hdmi_queda_sin_observaciones(cliente):
+    # HU-07, escenario 1.
+    prestamo = prestar("VB-05")
+    prestamo.con_hdmi = True
+    prestamo.save()
+    cliente.post(
+        "/devoluciones/",
+        {"codigo": "VB-05", "quien_devuelve": "Mateo Díaz", "hdmi_devuelto": "on"},
+    )
+    prestamo.refresh_from_db()
+    assert prestamo.fecha_hora_devolucion is not None
+    assert prestamo.hdmi_devuelto is True
+    assert prestamo.observacion == ""
+
+
+def test_devuelto_sin_hdmi_queda_disponible_con_la_observacion(cliente):
+    # HU-07, escenario 2.
+    prestamo = prestar("VB-05")
+    prestamo.con_hdmi = True
+    prestamo.save()
+    respuesta = cliente.post(
+        "/devoluciones/", {"codigo": "VB-05", "quien_devuelve": "Mateo Díaz"}, follow=True
+    )
+    prestamo.refresh_from_db()
+    assert prestamo.fecha_hora_devolucion is not None
+    assert prestamo.observacion == "Devuelto sin HDMI"
+    assert "5 de 5 videobeams disponibles" in texto(respuesta)
+    assert "Devuelto sin HDMI: lo llevó Mateo Díaz" in texto(respuesta)
