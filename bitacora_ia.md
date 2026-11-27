@@ -237,6 +237,14 @@ Asistente: Claude (claude.ai), con acceso a un entorno para crear archivos, ejec
 - **Razón:** El préstamo no se borra ni pierde información: la observación cambia de «Devuelto sin HDMI» a «HDMI recuperado el …» con la fecha y la hora, así queda el rastro de que faltó y de cuándo volvió. No hizo falta una migración nueva.
 - **Cómo la verifiqué:** Ciclo en la rama `hdmi-recuperado`: rojo y después 198 pruebas en verde, con pruebas de abuso (sin sesión, por GET, un préstamo que no existe y uno que no tenía HDMI pendiente). Lo probé en el navegador con el VB-01: al presionar el botón, la tabla desapareció y la observación quedó con la fecha.
 
+### Entrada 27
+
+- **Fecha:** 26 de noviembre de 2026
+- **Sugerencia o prompt:** «Actúa como diseñador de interfaces. Contexto: pantalla del bibliotecario de Control VideoBeam FET, que se usa todo el día en el mostrador. Tarea: rediseña las plantillas con los colores y el logo de la FET (te paso una captura de fet.edu.co). Formato: primero una vista previa; después los archivos. Restricciones: no cambies los textos que revisan las pruebas ni los nombres de los campos; que se pueda usar en el celular.»
+- **Decisión:** Ajustada.
+- **Razón:** Los 5 videobeams ahora se ven como fichas, verdes si están disponibles y amarillas si están prestados, así el bibliotecario sabe el estado de un vistazo. Pedí que usara los colores de la FET (verde #0f6635 y amarillo #fedc03) y el logo. Dejé en rojo «No devuelto en su jornada» porque es una alerta. El logo quedó dentro de `base.html` para que se vea aunque `DEBUG` esté en `False`.
+- **Cómo la verifiqué:** Al pegar, puse por error el código del login en `inicio.html` y fallaron 22 pruebas; lo encontré con `Get-Content` y lo corregí. Después, 198 pruebas en verde, y revisé en el navegador la página de inicio y el inicio de sesión. También me di cuenta de que, si agrego un VB-06 en el admin, el conteo sigue diciendo «de 5», porque la lista de 5 videobeams está fija en `reglas.py` según el requisito de la semana 3.
+
 
 ## Reflexión de la semana 5
 
